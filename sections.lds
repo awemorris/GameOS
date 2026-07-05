@@ -17,6 +17,7 @@ SECTIONS
 	.data ALIGN(4) : AT(0x100000 + _text_size)
 	{
 		*(.*data)
+                *(.rodata.*)
 	}
 	_data_end = (. + 3) & 0xfffffffc;
 	_data_size = _data_end - _data_start;

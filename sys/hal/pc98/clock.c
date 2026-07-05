@@ -4,12 +4,16 @@
 #include "sys/hal/i386/pic.h"
 #include "sys/sched.h"
 
+//
+// macro: HAL_PCAT for IBM PC/AT compatible
+// macro: HAL_PC98 for NEC PC-9801 compatible
+//
+
 /* CPUのtickカウント */
 static clock_t cpu_tick_count;
 
 /* forward declaration */
 static void init_8254();
-
 
 /*
  * クロック管理部を初期化する

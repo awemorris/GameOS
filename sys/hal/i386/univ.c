@@ -2,9 +2,9 @@
  * アドレス空間管理部
  */
 
-#include "sys/hal/i386/univ.h"
-#include "sys/hal/i386/asm.h"
-#include "sys/kcrt/kcrt.h"
+#include <sys/kcrt/kcrt.h>
+#include "univ.h"
+#include "asm.h"
 
 struct univ_info *univ_list_head;	/* univリストの先頭*/
 univ_t	*cur_univ;					/* 現在選択されているuniv */

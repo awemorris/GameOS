@@ -2,11 +2,11 @@
  * 物理メモリ管理部
  */
 
-#include "sys/hal/i386/pmem.h"
-#include "sys/hal/i386/asm.h"
-#include "sys/hal/i386/multiboot.h"
-#include "sys/hal/irq.h"
-#include "sys/kcrt/kcrt.h"
+#include <sys/hal/irq.h>
+#include <sys/kcrt/kcrt.h>
+#include "pmem.h"
+#include "asm.h"
+#include "multiboot.h"
 
 /* ページ使用状況テーブルのエントリを操作する */
 #define PAGEMAP_GET(n)		(pagemap_tbl[(n)>>5] & (1<<((n)&31)))

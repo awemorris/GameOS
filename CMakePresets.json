@@ -1,0 +1,47 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3, "minor": 16, "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name":           "pcat",
+            "displayName":    "IBM PC/AT",
+            "generator":      "Unix Makefiles",
+            "binaryDir":      "${sourceDir}/build-pcat",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":   "Release",
+                "CMAKE_C_COMPILER":   "i686-linux-gnu-gcc",
+                "CMAKE_LINKER":       "i686-linux-gnu-gcc",
+                "CMAKE_ASM_COMPILER": "i686-linux-gnu-gcc",
+                "KERN_CPU_I386":      "ON",
+                "KERN_BOARD_PCAT":    "ON"
+
+            }
+        },
+        {
+            "name":           "pc98",
+            "displayName":    "NEC PC-9800",
+            "generator":      "Unix Makefiles",
+            "binaryDir":      "${sourceDir}/build-pc98",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":   "Release",
+                "CMAKE_C_COMPILER":   "i686-linux-gnu-gcc",
+                "CMAKE_LINKER":       "i686-linux-gnu-gcc",
+                "CMAKE_ASM_COMPILER": "i686-linux-gnu-gcc",
+                "KERN_CPU_I386":      "ON",
+                "KERN_BOARD_PC98":    "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name":            "pcat",
+            "configurePreset": "pcat"
+        },
+        {
+            "name":            "pc98",
+            "configurePreset": "pc98"
+        }
+    ]
+}

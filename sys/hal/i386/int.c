@@ -1,9 +1,9 @@
-#include "sys/hal/i386/int.h"
-#include "sys/hal/i386/irq.h"
-#include "sys/hal/i386/asm.h"
-#include "sys/hal/i386/pic.h"
-#include "sys/sched.h"
-#include "sys/kcrt/kcrt.h"
+#include <sys/kern/sched.h>
+#include <sys/kcrt/kcrt.h>
+#include "int.h"
+#include "irq.h"
+#include "asm.h"
+#include "pic.h"
 
 /* 再スケジュールフラグ */
 static int	 resched_flag;

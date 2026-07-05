@@ -1,8 +1,8 @@
 #include <sys/types.h>
-#include "sys/hal/i386/asm.h"
-#include "sys/hal/i386/pmem.h"
-#include "sys/hal/i386/task.h"
-#include "sys/kcrt/kcrt.h"
+#include <sys/kcrt/kcrt.h>
+#include "asm.h"
+#include "pmem.h"
+#include "task.h"
 
 static void idle_task();
 

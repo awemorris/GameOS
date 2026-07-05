@@ -2,9 +2,9 @@
  * ƒ^ƒXƒNŠÇ—•”
  */
 
-#include "sys/hal/i386/task.h"
-#include "sys/hal/i386/asm.h"
-#include "sys/kcrt/kcrt.h"
+#include <sys/kcrt/kcrt.h>
+#include "task.h"
+#include "asm.h"
 
 extern uint32 tss_area[26];	/* TSS */
 

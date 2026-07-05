@@ -1,11 +1,11 @@
-#include "sys/hal/i386/irq.h"
-#include "sys/hal/i386/pic.h"
-#include "sys/hal/i386/asm.h"
-#include "sys/hal/i386/clock.h"
-#include "sys/hal/i386/int.h"
-#include "sys/hal/clock.h"
-#include "sys/kcrt/kcrt.h"
-#include "sys/sched.h"
+#include <sys/hal/clock.h>
+#include <sys/kcrt/kcrt.h>
+#include <sys/kern/sched.h>
+#include "irq.h"
+#include "pic.h"
+#include "asm.h"
+#include "clock.h"
+#include "int.h"
 
 
 /* IRQサービス情報 */

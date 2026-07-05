@@ -7,7 +7,7 @@
 #define _SYS_ARCH_X86_TASK_H_
 
 #include <sys/hal/task.h>	/* interface definition */
-#include <sys/sched.h>		/* (struct schedulable) */
+#include <sys/kern/sched.h>	/* (struct schedulable) */
 
 /*
  * システムスタックサイズ

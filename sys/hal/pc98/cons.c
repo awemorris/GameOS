@@ -1,12 +1,11 @@
 /*
- * ä»à’ÉRÉìÉ\Å[Éã
+ * Simple Console
  */
 
 #include "sys/hal/i386/cons.h"
 #include "sys/hal/i386/irq.h"	/* irq_enter_isr(), irq_leave_isr() */
 #include "sys/hal/i386/asm.h"	/* _asm_outb, SYS_START */
 #include "sys/kcrt/kcrt.h"		/* crt_memset16 */
-
 
 /* vram address */
 #define VRAM_ADDR				(0xb8000)

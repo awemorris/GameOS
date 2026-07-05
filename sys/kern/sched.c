@@ -4,10 +4,10 @@
  */
 
 #include <sys/types.h>
-#include "sys/sched.h"
-#include "sys/kcrt/kcrt.h"
-#include "sys/hal/clock.h"
-#include "sys/hal/irq.h"
+#include <sys/kern/sched.h>
+#include <sys/kcrt/kcrt.h>
+#include <sys/hal/clock.h>
+#include <sys/hal/irq.h>
 
 #define CPU_MAX				(0)
 #define GET_CPU_ID()		(0)

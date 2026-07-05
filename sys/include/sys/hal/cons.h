@@ -13,6 +13,7 @@
  * cons.c
  */
 
+void  cons_init(void);
 void  cons_cls(void);
 void  cons_putc(int c);
 void  cons_puts(const char *s);

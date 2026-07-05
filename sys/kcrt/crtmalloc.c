@@ -1,6 +1,5 @@
 #include "sys/kcrt/kcrt.h"
 #include "sys/hal/pmem.h"
-#include "sys/hal/i386/asm.h"	/* すぐ消すので(汗 */
 
 /* todo: pmem_palloc()はページ単位の管理なので、lib.cで細かい管理を行う。 */
 

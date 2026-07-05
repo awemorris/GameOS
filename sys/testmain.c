@@ -4,7 +4,7 @@
 #include "sys/hal/cons.h"
 #include "sys/hal/clock.h"
 #include "sys/kcrt/kcrt.h"
-#include "sys/sched.h"
+#include "sys/kern/sched.h"
 
 static const char msg_version[]	= "gravity 0.0.1 booted.\n";
 
