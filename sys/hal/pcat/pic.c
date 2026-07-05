@@ -1,82 +1,110 @@
+#include "../i386/pic.h"
+#include "../i386/int.h"
 #include "../i386/asm.h"
 
+#define PIC_MASTER_PORT1	0x0020
+#define PIC_MASTER_PORT2	0x0021
+#define PIC_SLAVE_PORT1		0x00a0
+#define PIC_SLAVE_PORT2		0x00a1
+
+#define SLAVE_IRQ		2
+
 /*
- * 割り込みコントローラを初期化する
+ * Initialize the PIC.
  */
 void pic_init()
 {
-	/* 8259A(マスタ)を初期化する */
-	asm_outb(0x20, 0x11);			/* 初期化開始, エッジトリガ/カスケード接続 */
-	asm_outb(0x21, INT_IRQ_BASE);	/* INT E0h-EFh */
-	asm_outb(0x21, 0x04);			/* IR2をスレーブに接続する */
-	asm_outb(0x21, 0x01);			/* 80x86モード */
+	/* Initialize the 8259A master. */
+	asm_outb(PIC_MASTER_PORT1, 0x11);		/* Start init, edge-triggered / cascaded */
+	asm_outb(PIC_MASTER_PORT2, INT_IRQ_BASE);	/* INT E0h-EFh */
+	asm_outb(PIC_MASTER_PORT2, 1 << SLAVE_IRQ);	/* Connect to the slave */
+	asm_outb(PIC_MASTER_PORT2, 0x01);		/* 80x86 mode */
 
-	/* 8259A(スレーブ)を初期化する */
-	asm_outb(0xa0, 0x11);			/* 初期化開始, エッジトリガ/カスケード接続 */
-	asm_outb(0xa1, INT_IRQ_BASE+8);/* INT E8h-EFh */
-	asm_outb(0xa1, 0x02);			/* マスタのIR2に接続する */
-	asm_outb(0xa1, 0x01);			/* 80x86モード */
+	/* Initialize the 8259A slave. */
+	asm_outb(PIC_SLAVE_PORT1, 0x11);		/* Start init, edge-triggered / cascaded */
+	asm_outb(PIC_SLAVE_PORT2, INT_IRQ_BASE + 8);	/* INT E8h-EFh */
+	asm_outb(PIC_SLAVE_PORT2, 1 << SLAVE_IRQ);	/* Connect to the master */
+	asm_outb(PIC_SLAVE_PORT2, 0x01);		/* 80x86 mode */
 
-	/* すべてのIRQをマスクする */
-	asm_outb(0x21, 0xff);
-	asm_outb(0xa1, 0xff);
+	/* Mask all IRQs. */
+	asm_outb(PIC_MASTER_PORT2, 0xff);
+	asm_outb(PIC_SLAVE_PORT2, 0xff);
 }
 
 /*
- * IRQマスクを設定する
+ * Set the IRQ mask.
  */
 void pic_set_irq_mask(
-	int	irq_num,	/* IRQ番号 */
-	int	mask)		/* 0: 許可する, 1: マスク(禁止)する */
+	int	irq_num,	/* IRQ number */
+	int	mask)		/* 0: allow, 1: disallow */
 {
 	if(irq_num < 8) {
-		uint8 imr = asm_inb(0x21);
+		uint8 imr = asm_inb(PIC_MASTER_PORT2);
 		if(mask) imr |=  (1 << irq_num);
 		else     imr &= ~(1 << irq_num);
-		asm_outb(0x21, imr);
+		asm_outb(PIC_MASTER_PORT2, imr);
 	} else {
-		uint8 imr = asm_inb(0xa1);
+		uint8 imr = asm_inb(PIC_SLAVE_PORT2);
 		if(mask) imr |=  (1 << (irq_num&7));
 		else     imr &= ~(1 << (irq_num&7));
-		asm_outb(0xa1, imr);
+		asm_outb(PIC_SLAVE_PORT2, imr);
 	}
 }
 
 /*
- * サービス中のIRQ番号を取得する
+ * Get the in-service IRQ number.
  */
 int pic_get_irq_in_service()
 {
-	uint8	in_service;
-	int		ret;
+	uint8 in_service;
+	int irq_num;
 
-	/* 割り込みコントローラのISRレジスタ(サービス中IRQ番号)を読む */
-	asm_outb(0x20, 0x0B);
-	in_service = asm_inb(0x20);
+	/* Read ISR register to know in-service IRQ number. */
+	asm_outb(PIC_MASTER_PORT1, 0x0B);
+	in_service = asm_inb(PIC_MASTER_PORT1);
 
-	/* IRQ番号を求める(立っているビットを探す) */
-	ret = -1;
+	/* Search the bit to get the IRQ number. */
+	irq_num = -1;
 	while(in_service != 0) {
-		ret++;
+		irq_num++;
 		in_service >>= 1;
 	}
-	return ret;
+
+	/* If slave IRQ. */
+	if (irq_num == 7) {
+		asm_outb(PIC_SLAVE_PORT1, 0x0B);
+		in_service = asm_inb(PIC_SLAVE_PORT1);
+
+		irq_num = 7;
+		while(in_service != 0) {
+			irq_num++;
+			in_service >>= 1;
+		}
+	}
+
+	return irq_num;
 }
 
 /*
- * EOIを送信する
+ * Send EOI.
  */
 void pic_send_eoi(int irq_num)
 {
-	/* EOIを送信する */
+	/* Sent EOI. */
 	if(irq_num <= 7) {
-		/* マスターの場合 */
-		asm_outb(0x20, 0x20);	/* マスターにEOIを送信する */
+		/* Send EOI to master. */
+		asm_outb(PIC_MASTER_PORT1, 0x20);
 	} else {
-		/* スレーブの場合 */
-		asm_outb(0xA0, 0x20);		/* スレーブにEOIを送信する */
-		asm_outb(0xA0, 0x0B);		/* スレーブのISRを読む */
-		if(asm_inb(0xA0) == 0)		/* 処理が残っていなければ */
-			asm_outb(0x20, 0x20);		/* マスターにもEOIを送信する */
+		/* Send EOI to slave. */
+		asm_outb(PIC_SLAVE_PORT1, 0x20);
+
+		/* Read slave ISR. */
+		asm_outb(PIC_SLAVE_PORT1, 0x0B);
+
+		/* If there is no remaining ISR: */
+		if(asm_inb(PIC_SLAVE_PORT1) == 0) {
+			/* Also send EOI to master. */
+			asm_outb(PIC_MASTER_PORT1, 0x20);
+		}
 	}
 }
