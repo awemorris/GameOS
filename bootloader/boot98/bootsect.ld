@@ -9,7 +9,7 @@ OUTPUT_FORMAT("elf32-i386")
 ENTRY(_start)
 
 SECTIONS {
-    . = 0x7c00;
+    . = 0;
     .text : {
 	    *(.text*) *(.rodata*) *(.data*)
     }

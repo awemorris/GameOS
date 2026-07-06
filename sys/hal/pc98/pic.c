@@ -1,6 +1,6 @@
-#include "sys/hal/i386/pic.h"
-#include "sys/hal/i386/int.h"
-#include "sys/hal/i386/asm.h"
+#include "../i386/pic.h"
+#include "../i386/int.h"
+#include "../i386/asm.h"
 
 #define PIC_MASTER_PORT1	0x0000
 #define PIC_MASTER_PORT2	0x0002
@@ -54,9 +54,9 @@ void pic_set_irq_mask(
 /*
  * Get the in-service IRQ number.
  */
-int pic_get_irq_in_service()
+int pic_get_irq_in_service(void)
 {
-	uint8 n_service;
+	uint8 in_service;
 	int irq_num;
 
 	/* Read ISR register to know in-service IRQ number. */
@@ -71,7 +71,7 @@ int pic_get_irq_in_service()
 	}
 
 	/* If slave IRQ. */
-	if (iqr_num == 7) {
+	if (irq_num == 7) {
 		asm_outb(PIC_SLAVE_PORT1, 0x0B);
 		in_service = asm_inb(PIC_SLAVE_PORT1);
 
@@ -82,7 +82,7 @@ int pic_get_irq_in_service()
 		}
 	}
 
-	return ret;
+	return irq_num;
 }
 
 /*

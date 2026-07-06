@@ -12,7 +12,7 @@
  *   - BIOS loads this sector at 0000:7c00, or equivalent physical 0x7c00.
  *   - BIOS passes boot drive in DL.
  *   - INT 13h Extensions AH=42h are available. No check is performed.
- *   - Kernel ELF starts at LBA 2.
+ *   - Kernel ELF starts at LBA 1.
  *   - ELF header and PHDR table fit in the first 512 bytes.
  *   - ELF is valid; no validation is performed.
  *   - BSS is not zero-filled here.
@@ -107,7 +107,14 @@ _start:
 	mov sp, 0x7c00
 
 	/*
-	 * Make multiboot info.
+	 * Save the PC/AT BIOS boot drive.
+	 *
+	 * For HDD boot this is usually 0x80.
+	 */
+	mov [boot_drive], dl
+
+	/*
+	 * Make pseudo multiboot info.
 	 */
 	mov eax, 1
 	mov [multiboot_flags], eax		/* MBINFO_FLAG_MEMORY */
@@ -115,13 +122,6 @@ _start:
 	mov [multiboot_mem_lower], eax		/* Memory size below 1MB in KB */
 	mov eax, 128 * 1024
 	mov [multiboot_mem_upper], eax		/* Memory size above 1MB in KB */
-
-	/*
-	 * Save the PC/AT BIOS boot drive.
-	 *
-	 * For HDD boot this is usually 0x80.
-	 */
-	mov [boot_drive], dl
 
 	/*
 	 * Prepare GS as an unreal-mode flat 4GB data segment.

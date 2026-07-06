@@ -25,15 +25,15 @@ _SIZE_STACK	= 0x1000		/* size of startup stack */
 _PDE_SYS = PTE_PRESENT | PTE_USER | PTE_BIG | PTE_WRITE
 
 /*
- * GDT
+ * GDT (Direct Mapped)
  */
 gdt_entries:
-	.byte 0, 0, 0, 0, 0, 0, 0, 0			/* ignored */
+	.byte 0, 0, 0, 0, 0, 0, 0, 0				/* ignored */
 	.byte 0xff, 0xff, 0, 0, 0, 0x98, 0xcf, 0	/* sys code */
 	.byte 0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0	/* sys data */
 	.byte 0xff, 0xff, 0, 0, 0, 0xf8, 0xcf, 0	/* user code */
 	.byte 0xff, 0xff, 0, 0, 0, 0xf2, 0xcf, 0	/* user data */
-	.byte 103,	0,	  0, 0, 0, 0x89, 0, 0	/* TSS */
+	.byte 103,	0,	  0, 0, 0, 0x89, 0, 0		/* TSS */
 
 /*
  * TSS
@@ -62,14 +62,14 @@ msg_bad_int:
 work_area:
 	.space 256
 
-
 .text
 
 /*
  * システムエントリポイント
  */ 
-	.global text_start
+.global text_start
 text_start:
+
 	/* Multibootヘッダの直後にジャンプする */
 	jmp .L_multiboot_header_end
 
@@ -99,14 +99,6 @@ save_boot_info:
 	movl	$(msg_invalid_bootloader), %esi
 	jmp		on_panic
   .L_bootloader_magic_ok:
-
-	/*
-	movl $0xb8000, %esi
-	movb $'B', %al
-	movb $0x0f, %ah
-	movb %al, 0(%esi)
-	movb %ah, 1(%esi)
-	*/
 
 	/* ブート情報を保存する(ワークエリアを中継して転送する) */
 	movl	%ebx, %esi			/* from ブート情報 */
@@ -152,10 +144,17 @@ identify_cpu:
 	jmp		on_panic
   .L_pse_ok:
 
+	/* debug signle step */
+	movl $0xa0000, %eax
+	movb $'C', %cl
+	movb %cl, 0(%eax)
+spin:
+	jmp spin
+
 /*
  * ページングを有効にする
  */
-init_pagin:
+init_paging:
 
 	/* PSE(ページサイズ拡張)ビットをセットして4MBページを有効化する */
 	movl	$0x00000010, %eax
@@ -267,7 +266,6 @@ create_idt:
  * Cのコードにジャンプする
  */
 jump_to_extern_c:
-
 	/* jump to cmain() */
 	jmp EXT_C(cmain)
 
@@ -277,8 +275,8 @@ jump_to_extern_c:
  * (%esiにNUL終端文字列のアドレスを指定する)
  */
 on_panic:
-	/* 文字列を表示する */
-	movl	$0xB8000, %edi
+#if defined(HAL_BOARD_PCAT)
+	movl	$0xb8000, %edi
 	movb	$0x0f, %al		/* text attr */
 	cld
   .L_on_panic_msg_loop:
@@ -287,8 +285,20 @@ on_panic:
 	movsb	/* text char */
 	stosb	/* text attr */
 	jmp		.L_on_panic_msg_loop
+#endif
+#if defined(HAL_BOARD_PC98)
+	movl	$0xa0000, %edi
+	xor	    %al, %al		/* zero for character's second byte */
+	cld
+  .L_on_panic_msg_loop:
+	cmpb	$0, (%esi)
+	jz		.L_on_panic_hlt_loop
+	movsb	/* text char */
+	stosb	/* text char second byte */
+	jmp		.L_on_panic_msg_loop
+#endif
 
-	/* 停止する */
+	/* Halt. */
   .L_on_panic_hlt_loop:
 	hlt
 	jmp		.L_on_panic_hlt_loop

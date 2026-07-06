@@ -2,34 +2,35 @@
  * Simple Console
  */
 
-#include "sys/hal/i386/cons.h"
-#include "sys/hal/i386/irq.h"	/* irq_enter_isr(), irq_leave_isr() */
-#include "sys/hal/i386/asm.h"	/* _asm_outb, SYS_START */
-#include "sys/kcrt/kcrt.h"		/* crt_memset16 */
+#include <sys/hal/cons.h>
+#include <sys/kcrt/kcrt.h>	/* crt_memset16 */
+#include "../i386/irq.h"	/* irq_enter_isr(), irq_leave_isr() */
+#include "../i386/asm.h"	/* _asm_outb, SYS_START */
 
 /* vram address */
-#define VRAM_ADDR				(0xb8000)
+#define VRAM_TEXT_ADDR		(0xA0000)
+#define VRAM_ATTR_ADDR		(0xA2000)
 
 /* vram character format */
-#define MK_VRAMCHAR(c,attr)		((c) | ((attr) << 8))
+#define MK_VRAMCHAR(c, attr)	((c) | ((attr) << 8))
 
 /* screen setting */
-typedef uint16 VRAMCHAR;
-VRAMCHAR 	*vram	= (VRAMCHAR *)(VRAM_ADDR + SYS_START);
-static int	columns	= 80;
-static int	lines	= 25;
+static uint8 *vram_text = (uint8 *)VRAM_TEXT_ADDR + SYS_START;
+static uint8 *vram_attr = (uint8 *)VRAM_ATTR_ADDR + SYS_START;
+static int columns = 80;
+static int lines = 20;
 
 /* console status */
-static int		cur_col		= 0;
-static int		cur_line	= 0;
-static uint8	cur_attr	= 0x07;
+static int cur_col = 0;
+static int cur_line = 0;
+static uint8 cur_attr = 0xbf;
 
 /* forward declaration */
 static void clear_screen();
 static void put_char(int c);
 static void set_cursor_pos(int line, int col);
 static void scroll_line();
-static int	get_keyboard_char();
+static int get_keyboard_char();
 
 /*
  * 簡易コンソールを初期化する
@@ -84,10 +85,8 @@ int cons_getc()
  */
 static void clear_screen()
 {
-	VRAMCHAR space_char;
-
-	space_char = MK_VRAMCHAR(' ', cur_attr);
-	crt_memset16(vram, space_char, columns * lines);
+	crt_memset16((uint16 *)vram_text, ' ', 80 * 20);
+	crt_memset16((uint16 *)vram_attr, 0, 80 * 20);
 	set_cursor_pos(0, 0);
 }
 
@@ -104,7 +103,8 @@ static void put_char(int c)
 		break;
 	default:
 		/* 文字と属性を書き込む */
-		*(vram + cur_col + cur_line*columns) = MK_VRAMCHAR(c, cur_attr);
+		*(vram_text + 2 * cur_col + cur_line * 160) = c;
+		*(vram_attr + 2 * cur_col + cur_line * 160) = cur_attr;
 		cur_col++;
 		break;
 	}
@@ -123,43 +123,36 @@ static void put_char(int c)
 	set_cursor_pos(cur_line, cur_col);
 }
 
-/*
- * move cursor
- */
+/* move cursor */
 static void set_cursor_pos(int line, int col)
 {
-	uint32 addr;
+        uint16 addr = line * 80 + col;
 
-	addr = col + line * columns;
+        /* Wait for GDC FIFO READY. */
+        while ((asm_inb(0x60) & 0x04) == 0)
+		;
 
-	asm_outb(0x3d4, 0x0e);
-	asm_outb(0x3d5, addr >> 8);
-	asm_outb(0x3d4, 0x0f);
-	asm_outb(0x3d5, addr & 0xff);
+        /* Send CSRW (Cursor Write: 0x49) control command to GDC. */
+        asm_outb(0x60, 0x49);
 
-	cur_line = line;
-	cur_col  = col;
+        /* Send lower 8-bit of the cursor address. */
+        asm_outb(0x62, addr & 0xff);
+
+        /* Send higher 8-bit of the cursor address. */
+        asm_outb(0x62, (addr >> 8) & 0xff);
+
+        /* Update the position. */
+        cur_line = line;
+        cur_col  = col;
 }
 
-/*
- * scroll 1-line
- */
+/* scroll 1-line */
 static void scroll_line()
 {
-	VRAMCHAR	*p, space_char;
-	uint32		count, blank, i;
-
-	/* 先頭行から順に1行下の文字をセットしていく */
-	p = vram;
-	count = columns * (lines-1);
-	for(i=0; i<count; i++, p++)
-		*p = *(p + columns);
-
-	/* 最下行をクリアする */
-	space_char = ' ' | (cur_attr << 8);
-	crt_memset16(p, space_char, columns);
+	crt_memcpy(vram_text, vram_text + 160, 160 * 19);
+	crt_memset16((uint16 *)vram_text + 80 * 19, ' ', 80);
+	crt_memset16((uint16 *)vram_attr + 80 * 19, 0, 80);
 }
-
 
 /*
  * 簡易キーボードドライバ
@@ -170,40 +163,39 @@ static void scroll_line()
 int	kbd_buf[KBD_BUF_SIZE];
 int	kbd_buf_len = 0;
 
-
 /*
- * キーボードから1文字入力する
+ * Input one character from keyboard.
  */
 int get_keyboard_char()
 {
-	uint8  scancode;
+        uint8 scancode;
 
-	/* キーボードから1文字以上受信する */
-	for(;;) {
-		/* 割り込みを待って割り込み処理を開始する */
-		irq_enter_isr(IRQ_KEYBOARD);
+        /* キーボードから1文字以上受信する */
+        for(;;) {
+                irq_enter_isr(IRQ_KEYBOARD);
 
-		/* キーボードコントローラと通信する */
-		kbd_buf_len = 0;
-		while(asm_inb(0x64) & 1) {
-			scancode = asm_inb(0x60);
-			if(kbd_buf_len < KBD_BUF_SIZE)
-				kbd_buf[kbd_buf_len++] = scancode;
-		}
+                kbd_buf_len = 0;
+                while(asm_inb(0x43) & 2) {
+                        scancode = asm_inb(0x41);
+                        if(kbd_buf_len < KBD_BUF_SIZE)
+                                kbd_buf[kbd_buf_len++] = scancode;
+                }
 
-		/* 割り込み処理を完了する */
-		irq_leave_isr(IRQ_KEYBOARD);
+                irq_leave_isr(IRQ_KEYBOARD);
 
-		/* 受信バッファをチェックする */
-		if(kbd_buf_len == 0)
-			continue;
-		if(scancode == 0xE0 || scancode == 0xE1)
-			continue;
-		if((kbd_buf[0] & 0x80) != 0)
-			continue;
-		break;
-	}
+                if(kbd_buf_len == 0)
+                        continue;
 
-	/* キーコード */
-	return kbd_buf[0];
+                /*
+                 * Bit 7 is ON when the key is released.
+                 * We use the press edge and ignore release edge.
+                 */
+                if((kbd_buf[0] & 0x80) != 0)
+                        continue;
+                        
+                break;
+        }
+
+        /* TODO: scancode to ASCII. */
+        return kbd_buf[0];
 }
