@@ -82,6 +82,9 @@
 
 .equ elf_entry,    VAR_BASE + 0x10
 
+.equ multiboot_flags,		VAR_BASE + 0x14
+.equ multiboot_mem_lower,	VAR_BASE + 0x18
+.equ multiboot_mem_upper,	VAR_BASE + 0x1c
 
 _start:
 	/*
@@ -91,12 +94,27 @@ _start:
 	 * through absolute physical addresses.
 	 */
 	cli
-	cld			/* lodsb in copy_secbuf_to_high needs DF=0;
-				   BIOS does not guarantee it */
+
+	/*
+	 * lodsb in copy_secbuf_to_high needs DF=0;
+	 * BIOS does not guarantee it.
+	 */
+	cld
+
 	xor ax, ax
 	mov ds, ax
 	mov ss, ax
 	mov sp, 0x7c00
+
+	/*
+	 * Make multiboot info.
+	 */
+	mov eax, 1
+	mov [multiboot_flags], eax		/* MBINFO_FLAG_MEMORY */
+	mov eax, 640
+	mov [multiboot_mem_lower], eax		/* Memory size below 1MB in KB */
+	mov eax, 128 * 1024
+	mov [multiboot_mem_upper], eax		/* Memory size above 1MB in KB */
 
 	/*
 	 * Save the PC/AT BIOS boot drive.
@@ -125,7 +143,7 @@ _start:
 	 *
 	 * This sector contains the ELF header and, by assumption, all PHDRs.
 	 */
-	mov ax, KERNEL_LBA
+	mov ax, KERNEL_LBA	/* Currently 16-bit */
 	mov bx, HDRBUF_SEG
 	call read_lba_buf
 
@@ -182,13 +200,13 @@ enter_pm32_and_jump:
 	cli
 
 	/*
-	* Load the protected-mode GDT.
-	*/
+	 * Load the protected-mode GDT.
+	 */
 	lgdt [gdtr]
 
 	/*
-	* Set CR0.PE.
-	*/
+	 * Set CR0.PE.
+	 */
 	mov eax, cr0
 	or al, 1
 	mov cr0, eax
@@ -438,27 +456,28 @@ pm32_entry:
 	 */
 	mov ax, 0x10
 	mov ds, ax
-	mov es, ax
-	mov ss, ax
 
 	/*
-	* Temporary protected-mode stack below VGA memory.
-	*/
+	 * Temporary protected-mode stack below VGA memory.
+	 */
 	mov esp, 0x0009f000
 
 	/*
-	* Convert high-half ELF entry VMA to physical address.
-	*
-	* Example:
-	*   0x80101234 -> 0x00101234
-	*/
-	mov eax, dword ptr [elf_entry]
-	btr eax, 31
+	 * Multiboot info
+	 *
+	 * We only need multiboot_flags and multiboot_mem_upper.
+	 * Other fields are garbage.
+	 */
+	mov eax, 0x2badb002
+	mov ebx, multiboot_flags
 
 	/*
-	* Jump to the kernel entry in 32-bit protected mode.
-	*/
-	jmp eax
+	 * Jump to the kernel entry in 32-bit protected mode.
+	 */
+	mov edx, 0x100000
+	push 0x08
+	push edx
+	retf
 
 .code16
 
@@ -467,29 +486,32 @@ pm32_entry:
  *   0x00 null
  *   0x08 flat 32-bit code
  *   0x10 flat 32-bit data
+ *   0x18 flat 32-bit code (physical 0x00000000 -> virtual 0x80000000)
+ *   0x20 flat 32-bit data (physical 0x00000000 -> virtual 0x80000000)
  */
 gdt:
 	.quad 0
 
 	/*
-	* 0x08: flat 32-bit code, base=0, limit=4GB.
-	*/
-	.word 0xffff
-	.word 0x0000
-	.byte 0x00
-	.byte 0x9a
-	.byte 0xcf
-	.byte 0x00
+	 * 0x08: flat 32-bit code, base=0, limit=4GB.
+	 */
+	.word 0xffff    /* Limit 0:15 */
+	.word 0x0000    /* Base 0:15 */
+	.byte 0x00      /* Base 16:23 */
+	.byte 0x9a      /* Access: Code, Execute/Read */
+	.byte 0xcf      /* Flags(0xc0) + Limit 16:19(0x7) */
+	.byte 0x00      /* Base 24:31 -> 0x00000000 */
 
 	/*
 	* 0x10: flat 32-bit data, base=0, limit=4GB.
 	*/
-	.word 0xffff
-	.word 0x0000
-	.byte 0x00
-	.byte 0x92
-	.byte 0xcf
-	.byte 0x00
+	.word 0xffff    /* Limit 0:15 */
+	.word 0x0000    /* Base 0:15 */
+	.byte 0x00      /* Base 16:23 */
+	.byte 0x92      /* Access: Data, Read/Write */
+	.byte 0xcf      /* Flags(0xc0) + Limit 16:19(0x7) */
+	.byte 0x00      /* Base 24:31 -> 0x00000000 */
+
 gdt_end:
 
 /*

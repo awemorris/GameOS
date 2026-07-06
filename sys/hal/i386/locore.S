@@ -70,7 +70,6 @@ work_area:
  */ 
 	.global text_start
 text_start:
-
 	/* Multibootヘッダの直後にジャンプする */
 	jmp .L_multiboot_header_end
 
@@ -78,8 +77,8 @@ text_start:
 	.align 4
   .L_multiboot_header_start:
 
-	.long	0x1badb002					/* magic */
-	.long	0x00000003					/* flags */
+	.long	0x1badb002			/* magic */
+	.long	0x00000003			/* flags */
 	.long	-(0x1badb002 + 0x00000003)	/* checksum */
 
 	.align 4
@@ -101,8 +100,16 @@ save_boot_info:
 	jmp		on_panic
   .L_bootloader_magic_ok:
 
+	/*
+	movl $0xb8000, %esi
+	movb $'B', %al
+	movb $0x0f, %ah
+	movb %al, 0(%esi)
+	movb %ah, 1(%esi)
+	*/
+
 	/* ブート情報を保存する(ワークエリアを中継して転送する) */
-	movl	%ebx, %esi						/* from ブート情報 */
+	movl	%ebx, %esi			/* from ブート情報 */
 	movl	$(work_area - SYS_START), %edi	/* to 中継ワークエリア */
 	movl	$90, %ecx
 	cld
