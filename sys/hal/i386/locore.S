@@ -10,30 +10,34 @@
 _ADDR_IDT	= ADDR_IDT		/* Interrupt descriptor table */
 _ADDR_BOOT_INFO	= ADDR_BOOT_INFO	/* Multiboot Information */
 _ADDR_PDT	= ADDR_INIT_PDT		/* Page directory table  */
+_ADDR_PT	= ADDR_INIT_PT		/* Page table  */
 _ADDR_STACK	= ADDR_INIT_STACK	/* Startup stack */
 _ADDR_FREETOP	= ADDR_FREE_TOP		/* Top free address */
+_NUM_HIGH_PDE   = 64                    /* 64 * 4MB = 256MB */
+_NUM_PTE_TOTAL  = 64 * 1024             /* 256MB / 4KB */
 
 /*
  * size setting
  */
-_SIZE_GDT	= 8 * (SEG_MAX+1)	/* size of the GDT (5 entries) */
+_SIZE_GDT	= 8 * (SEG_MAX+1)	/* size of the GDT (3 entries) */
 _SIZE_STACK	= 0x1000		/* size of startup stack */
 
 /*
  * page directory table entry attr setting
  */
-_PDE_SYS = PTE_PRESENT | PTE_USER | PTE_BIG | PTE_WRITE
+_PDE_SYS = PTE_PRESENT | PTE_USER | PTE_WRITE
+_PTE_SYS = PTE_PRESENT | PTE_USER | PTE_WRITE
 
 /*
  * GDT (Direct Mapped)
  */
 gdt_entries:
-	.byte 0, 0, 0, 0, 0, 0, 0, 0				/* ignored */
-	.byte 0xff, 0xff, 0, 0, 0, 0x98, 0xcf, 0	/* sys code */
-	.byte 0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0	/* sys data */
-	.byte 0xff, 0xff, 0, 0, 0, 0xf8, 0xcf, 0	/* user code */
-	.byte 0xff, 0xff, 0, 0, 0, 0xf2, 0xcf, 0	/* user data */
-	.byte 103,	0,	  0, 0, 0, 0x89, 0, 0		/* TSS */
+	.byte 0, 0, 0, 0, 0, 0, 0, 0			/* 0x0000: ignored */
+	.byte 0xff, 0xff, 0, 0, 0, 0x98, 0xcf, 0	/* 0x0008: sys code */
+	.byte 0xff, 0xff, 0, 0, 0, 0x92, 0xcf, 0	/* 0x0010: sys data */
+	.byte 0xff, 0xff, 0, 0, 0, 0xf8, 0xcf, 0	/* 0x0018: user code */
+	.byte 0xff, 0xff, 0, 0, 0, 0xf2, 0xcf, 0	/* 0x0020: user data */
+	.byte 103,  0,    0, 0, 0, 0x89, 0,    0	/* 0x0028: TSS */
 
 /*
  * TSS
@@ -124,6 +128,7 @@ identify_cpu:
 	pushl	$0
 	popfl
 
+#if 0
 	/* CPUID命令が利用できることをチェックする */
 	pushl	$(EFLAGS_ID)
 	popfl
@@ -143,58 +148,137 @@ identify_cpu:
 	movl	$(msg_pse_not_supported - SYS_START), %esi
 	jmp		on_panic
   .L_pse_ok:
-
-	/* debug signle step */
-	movl $0xa0000, %eax
-	movb $'C', %cl
-	movb %cl, 0(%eax)
-spin:
-	jmp spin
+#endif
 
 /*
  * ページングを有効にする
  */
 init_paging:
 
-	/* PSE(ページサイズ拡張)ビットをセットして4MBページを有効化する */
-	movl	$0x00000010, %eax
-	movl	%eax, %cr4
-
-	/* ページディレクトリテーブル(PDT)のエントリ(PDE)をゼロクリアする */
-	movl	$(_ADDR_PDT), %edi
-	movl	$0, %eax
-	movl	$1024, %ecx # 1024 entries
+	/*
+	 * Clear the page directory table.
+	 *
+	 * PDT has 1024 entries.
+	 * Each entry is 4 bytes.
+	*/
+	movl    $(_ADDR_PDT), %edi
+	xorl    %eax, %eax
+	movl    $1024, %ecx
 	cld
-	rep stosl
+	rep    stosl
 
-	/* 仮想アドレス0x80000000から512MBの範囲を物理アドレス0x00000000へマップする */
-	/* (ページサイズは4MBで、1段階のページテーブル用いる。) */
-	movl	$(_ADDR_PDT + 2048), %edi	/* vaddr from 0x80000000 */
-	movl	$(0 + _PDE_SYS), %eax		/* paddr from 0x00000000 */
-	movl	$128, %ecx					/* 512MB (128 entries) */
-  L_pdtloop:
-	movl	%eax, (%edi)				/* set_entry(vaddr <-- paddr) */
-	addl	$4, %edi					/* vaddr += 4MB */
-	addl	$0x400000, %eax				/* paddr += 4MB */
-	loop L_pdtloop
+	/*
+	* Build page tables for 256MB.
+	*
+	* We place 64 page tables immediately after PDT:
+	*
+	*   _ADDR_PT + 0x00000 : PT0
+	*   _ADDR_PT + 0x01000 : PT1
+	*   _ADDR_PT + 0x02000 : PT2
+	*   ...
+	*   _ADDR_PT + 0x3f000 : PT64
+	*
+	* Each PT maps 4MB using 1024 entries.
+	*
+	* Total:
+	*
+	*   64 * 1024 PTEs = 65536 PTEs
+	*   65536 * 4KB   = 256MB
+	*/
+	movl    $(_ADDR_PT), %edi
+	movl    $(0x00000000 + _PTE_SYS), %eax
+	movl    $(_NUM_PTE_TOTAL), %ecx
+	cld
 
-	/* 最下位4MBを1:1マップする(ページング有効化直後に実行を継続するため) */
-	movl	$(_ADDR_PDT + 0), %edi 		/* vaddr 0x00000000 */
-	movl	$(0 + _PDE_SYS), (%edi)		/* paddr 0x00000000 */
+    .L_fill_pte:
+	/*
+	* PTE format without PSE:
+	*
+	*   bits 31..12 : physical page base address
+	*   bits 11..0  : flags
+	*
+	* eax starts as:
+	*
+	*   0x00000000 | flags
+	*
+	* and increases by 0x1000 for each 4KB page.
+	*/
+	stosl
+	addl    $0x1000, %eax
+	loop    .L_fill_pte
 
-	/* PGビットをセットしてページングを有効化する */
-	movl	$(_ADDR_PDT), %eax
-	movl	%eax, %cr3
-	movl	%cr0, %eax
-	orl 	$0x80000000, %eax			/* set pg bit */
-	movl	%eax, %cr0
+	/*
+	* Fill PDE[512] - PDE[576].
+	*
+	* 0x80000000 / 4MB = 512
+	*
+	* So PDE[512] corresponds to virtual 0x80000000.
+	*
+	* Each PDE points to one 4KB page table.
+	*/
+	movl    $(_ADDR_PDT + 512 * 4), %edi
+	movl    $(_ADDR_PT + _PDE_SYS), %eax
+	movl    $(_NUM_HIGH_PDE), %ecx
 
-	/* 仮想アドレス0x80000000台にジャンプする */
-	ljmp	$(SEG_SYS_CODE), $(.L_sys_area)
-  .L_sys_area:
+  .L_fill_high_pde:
+	/*
+	* PDE points to the physical address of a page table.
+	*
+	* PDE[512] -> PT0  maps 0x80000000 - 0x803fffff
+	* PDE[513] -> PT1  maps 0x80400000 - 0x807fffff
+	* PDE[514] -> PT2  maps 0x80800000 - 0x80bfffff
+	* ...
+	*/
+	movl    %eax, (%edi)
+	addl    $4, %edi
+	addl    $0x1000, %eax
+	loop    .L_fill_high_pde
 
-	/* 仮想アドレス0x80000000台でスタックの設定を行う */
-	movl	$(_ADDR_STACK + _SIZE_STACK + SYS_START), %esp
+	/*
+	* Identity-map the lowest 4MB.
+	*
+	* This is needed because immediately after CR0.PG is set, the CPU is
+	* still executing the next instruction using the current linear address.
+	*
+	* PDE[0] -> PT0
+	*
+	* Therefore:
+	*
+	*   0x00000000 - 0x003fffff
+	*
+	* is mapped to:
+	*
+	*   0x00000000 - 0x003fffff
+	*/
+	movl    $(_ADDR_PT + _PDE_SYS), %eax
+	movl    %eax, (_ADDR_PDT + 0 * 4)
+
+	/*
+	* Load CR3 with the physical address of PDT.
+	*/
+	movl    $(_ADDR_PDT), %eax
+	movl    %eax, %cr3
+
+	/*
+	* Enable paging by setting CR0.PG.
+	*/
+	movl    %cr0, %eax
+	orl    $0x80000000, %eax
+	movl    %eax, %cr0
+
+	/*
+	* Jump to the higher-half address.
+	*
+	* After this point, code runs at virtual address 0x80000000+.
+	*/
+	//ljmp    $(SEG_SYS_CODE), $(.L_sys_area)
+	ljmp    $0x08, $(.L_sys_area)
+    .L_sys_area:
+
+	/*
+	* Set startup stack in higher-half virtual address space.
+	*/
+	movl    $(_ADDR_STACK + _SIZE_STACK + SYS_START), %esp
 
 /*
  * GDTの初期化を行う (GRUBが用意したGDTを置き換える)

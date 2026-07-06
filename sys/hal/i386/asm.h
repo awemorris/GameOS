@@ -29,13 +29,14 @@
 #define SYS_V_START			(0xc0000000)
 
 /* 固定的に利用する低位アドレス */
-#define ADDR_NULL			(0x00000000)	/* 未使用 */
-#define ADDR_IDT			(0x00001000)	/* 割り込みデスクリプタテーブル */
+#define ADDR_NULL		(0x00000000)	/* 未使用 */
+#define ADDR_IDT		(0x00001000)	/* 割り込みデスクリプタテーブル */
 #define ADDR_BOOT_INFO		(0x00002000)	/* ブートローダから渡された情報 */
-#define ADDR_INIT_PDT		(0x00003000)	/* 初期ページディレクトリテーブル */
-#define ADDR_INIT_STACK		(0x00004000)	/* スタートアップスタック */
-#define ADDR_TEMP_PPAGE_MAP	(0x00005000)	/* pmem.cの初期化用作業領域 */
+#define ADDR_INIT_STACK		(0x00003000)	/* スタートアップスタック */
+#define ADDR_TEMP_PPAGE_MAP	(0x00004000)	/* pmem.cの初期化用作業領域 */
+#define ADDR_INIT_PDT		(0x00005000)	/* 初期ページディレクトリテーブル */
 #define ADDR_FREE_TOP		(0x00006000)	/* 低位アドレスのfree top  */
+#define ADDR_INIT_PT		(0x00020000)	/* Initial Page Table */
 
 /*
  * セグメントの設定
@@ -43,10 +44,10 @@
 
 /* セレクタ値 */
 #define SEG_INVALID		(0x0000)	/* 無効セレクタ値 */
-#define SEG_SYS_CODE	(0x0008)	/* システムコード */
-#define SEG_SYS_DATA	(0x0010)	/* システムデータ/スタック */
-#define SEG_USER_CODE	(0x0018)	/* ユーザコード */
-#define SEG_USER_DATA	(0x0020)	/* ユーザデータ/スタック */
+#define SEG_SYS_CODE		(0x0008)	/* システムコード */
+#define SEG_SYS_DATA		(0x0010)	/* システムデータ/スタック */
+#define SEG_USER_CODE		(0x0018)	/* ユーザコード */
+#define SEG_USER_DATA		(0x0020)	/* ユーザデータ/スタック */
 #define SEG_TSS			(0x0028)	/* TSS (今のところ唯一のTSS) */
 #define SEG_MAX			SEG_TSS
 

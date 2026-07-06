@@ -28,7 +28,6 @@ void testmain()
 	crt_printf("% ");
 	while(1) {
 		char c;
-
 		c = cons_getc();
 		crt_putchar(c);
 	}
@@ -46,7 +45,7 @@ void test_task1(int param)
 		sched_link(t1, SCHED_LIST_TIMEWAIT, 0, 10);
 		sched_yield();
 
-		crt_printf(" task(1): local cpu clock count=%d\n",	clock_get_tick_count());
+		crt_printf(" task(1): local cpu clock count=%d\n", clock_get_tick_count());
 	}
 }
 
@@ -79,22 +78,3 @@ void test_task3(int param)
 		crt_putchar('K');
 	}
 }
-
-
-/*
-	for(;;) {
-		// 割り込みを待って割り込み処理を開始する
-		irq_enter_isr(1);
-
-		// キーボードコントローラと通信する
-		sys_puts("KEYCODE:");
-		while(_asm_inb(0x64) & 1) {
-			unsigned char scancode = _asm_inb(0x60);
-			sys_puthex8(scancode);
-		}
-		putchar('\n');
-
-		// 割り込み処理を完了する
-		irq_leave_isr(1);
-	}
-*/

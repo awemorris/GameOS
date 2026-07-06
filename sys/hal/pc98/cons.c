@@ -18,7 +18,7 @@
 static uint8 *vram_text = (uint8 *)VRAM_TEXT_ADDR + SYS_START;
 static uint8 *vram_attr = (uint8 *)VRAM_ATTR_ADDR + SYS_START;
 static int columns = 80;
-static int lines = 20;
+static int lines = 25;
 
 /* console status */
 static int cur_col = 0;
@@ -37,8 +37,6 @@ static int get_keyboard_char();
  */
 void cons_init()
 {
-	/* TODO: 画面サイズ取得など */
-
 	/* 画面をクリアする */
 	clear_screen();
 }
@@ -85,8 +83,7 @@ int cons_getc()
  */
 static void clear_screen()
 {
-	crt_memset16((uint16 *)vram_text, ' ', 80 * 20);
-	crt_memset16((uint16 *)vram_attr, 0, 80 * 20);
+	crt_memset(vram_text, 0, 160 * 25);
 	set_cursor_pos(0, 0);
 }
 
@@ -103,8 +100,7 @@ static void put_char(int c)
 		break;
 	default:
 		/* 文字と属性を書き込む */
-		*(vram_text + 2 * cur_col + cur_line * 160) = c;
-		*(vram_attr + 2 * cur_col + cur_line * 160) = cur_attr;
+		*(vram_text + cur_line * 160 + cur_col * 2) = c;
 		cur_col++;
 		break;
 	}
@@ -120,7 +116,7 @@ static void put_char(int c)
 	}
 
 	/* カーソル位置を更新する */
-	set_cursor_pos(cur_line, cur_col);
+	//set_cursor_pos(cur_line, cur_col);
 }
 
 /* move cursor */
@@ -149,9 +145,8 @@ static void set_cursor_pos(int line, int col)
 /* scroll 1-line */
 static void scroll_line()
 {
-	crt_memcpy(vram_text, vram_text + 160, 160 * 19);
-	crt_memset16((uint16 *)vram_text + 80 * 19, ' ', 80);
-	crt_memset16((uint16 *)vram_attr + 80 * 19, 0, 80);
+	crt_memcpy(vram_text, vram_text + 160, 160 * 24);
+	crt_memset(vram_text + 160 * 24, 0, 160);
 }
 
 /*

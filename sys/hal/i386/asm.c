@@ -21,14 +21,21 @@ void cmain()
 
 	/* 依存関係に基づいた順でサブモジュールを初期化する */
 	cons_init();	/* 簡易コンソール		*/
+
 	//	smp_init(); 	/* プロセッサ(UP/SMP)	*/
 	pmem_init(); 	/* 物理ページ管理		*/
+
 	irq_init(); 	/* IRQ					*/
+
 	int_init(); 	/* 割り込み 			*/
+
 	univ_init();	/* アドレス空間 		*/
+
 	task_init();	/* タスク				*/
+
 	//	io_init();		/* I/Oアクセス			*/
 	sched_init();	/* スケジューラ 		*/
+
 	clock_init();	/* インターバルクロック */
 
 	/* テスト用メインのタスクを作成する起動する */
@@ -42,11 +49,21 @@ void cmain()
 static void idle_task()
 {
 	static char animation[4] = {'/', '-', '\\', '|'};
-	int 		index = 0;
-	uint16		*vram = (uint16 *)(0x800B8000 + 158);
+	int index = 0;
+#if defined(HAL_BOARD_PCAT)
+	uint16 *vram = (uint16 *)(0x800b8000 + 158);
+#endif
+#if defined(HAL_BOARD_PC98)
+	uint16 *vram = (uint16 *)(0x800a0000 + 158);
+#endif
 
 	for(;;) {
-		*vram = animation[index] | (0x2100);
+#if defined(HAL_BOARD_PCAT)
+		*vram = animation[index] | 0x2100;
+#endif
+#if defined(HAL_BOARD_PC98)
+		*vram = animation[index];
+#endif
 		index = (index + 1) % 4;
 		asm_hlt();
 	}
