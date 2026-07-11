@@ -44,7 +44,7 @@ gdt_entries:
  */
 	.global EXT_C(tss_area)
 EXT_C(tss_area):
-	.space 104		/* TODO: CPU‚²‚Æ‚É—pˆÓ */
+	.space 104		/* TODO: CPUã”ã¨ã«ç”¨æ„ */
 
 /*
  * message
@@ -69,15 +69,15 @@ work_area:
 .text
 
 /*
- * ƒVƒXƒeƒ€ƒGƒ“ƒgƒŠƒ|ƒCƒ“ƒg
+ * ã‚·ã‚¹ãƒ†ãƒ ã‚¨ãƒ³ãƒˆãƒªãƒã‚¤ãƒ³ãƒˆ
  */ 
 .global text_start
 text_start:
 
-	/* Multibootƒwƒbƒ_‚Ì’¼Œã‚ÉƒWƒƒƒ“ƒv‚·‚é */
+	/* Multibootãƒ˜ãƒƒãƒ€ã®ç›´å¾Œã«ã‚¸ãƒ£ãƒ³ãƒ—ã™ã‚‹ */
 	jmp .L_multiboot_header_end
 
-	/* Multibootƒwƒbƒ_ */
+	/* Multibootãƒ˜ãƒƒãƒ€ */
 	.align 4
   .L_multiboot_header_start:
 
@@ -89,47 +89,47 @@ text_start:
   .L_multiboot_header_end:
 
 /*
- * ƒu[ƒgƒ[ƒ_‚©‚ç“n‚³‚ê‚½î•ñ‚ğ•Û‘¶‚·‚é
+ * ãƒ–ãƒ¼ãƒˆãƒ­ãƒ¼ãƒ€ã‹ã‚‰æ¸¡ã•ã‚ŒãŸæƒ…å ±ã‚’ä¿å­˜ã™ã‚‹
  */
 save_boot_info:
 
-	/* ƒZƒOƒƒ“ƒgƒŒƒWƒXƒ^‚ğİ’è‚·‚é */
+	/* ã‚»ã‚°ãƒ¡ãƒ³ãƒˆãƒ¬ã‚¸ã‚¹ã‚¿ã‚’è¨­å®šã™ã‚‹ */
 	movw	%ds, %dx
 	movw	%dx, %es
 
-	/* ƒu[ƒgƒ[ƒ_‚ÌƒVƒOƒlƒ`ƒƒ‚ğƒ`ƒFƒbƒN‚·‚é */
+	/* ãƒ–ãƒ¼ãƒˆãƒ­ãƒ¼ãƒ€ã®ã‚·ã‚°ãƒãƒãƒ£ã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹ */
 	cmpl	$0x2badb002, %eax
 	jz		.L_bootloader_magic_ok
 	movl	$(msg_invalid_bootloader), %esi
 	jmp		on_panic
   .L_bootloader_magic_ok:
 
-	/* ƒu[ƒgî•ñ‚ğ•Û‘¶‚·‚é(ƒ[ƒNƒGƒŠƒA‚ğ’†Œp‚µ‚Ä“]‘—‚·‚é) */
-	movl	%ebx, %esi			/* from ƒu[ƒgî•ñ */
-	movl	$(work_area - SYS_START), %edi	/* to ’†Œpƒ[ƒNƒGƒŠƒA */
+	/* ãƒ–ãƒ¼ãƒˆæƒ…å ±ã‚’ä¿å­˜ã™ã‚‹(ãƒ¯ãƒ¼ã‚¯ã‚¨ãƒªã‚¢ã‚’ä¸­ç¶™ã—ã¦è»¢é€ã™ã‚‹) */
+	movl	%ebx, %esi			/* from ãƒ–ãƒ¼ãƒˆæƒ…å ± */
+	movl	$(work_area - SYS_START), %edi	/* to ä¸­ç¶™ãƒ¯ãƒ¼ã‚¯ã‚¨ãƒªã‚¢ */
 	movl	$90, %ecx
 	cld
 	rep movsb
-	movl	$(work_area - SYS_START), %esi	/* from ’†Œpƒ[ƒNƒGƒŠƒA */
-	movl	$(_ADDR_BOOT_INFO), %edi	/* to Ši”[æ */
+	movl	$(work_area - SYS_START), %esi	/* from ä¸­ç¶™ãƒ¯ãƒ¼ã‚¯ã‚¨ãƒªã‚¢ */
+	movl	$(_ADDR_BOOT_INFO), %edi	/* to æ ¼ç´å…ˆ */
 	movl	$90, %ecx
 	rep movsb
 
 /*
- * CPUƒ^ƒCƒv‚ğ’²‚×‚é(Å’áŒÀ•K—v‚È‹@”\‚ªÀ‘•‚³‚ê‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN‚·‚é)
+ * CPUã‚¿ã‚¤ãƒ—ã‚’èª¿ã¹ã‚‹(æœ€ä½é™å¿…è¦ãªæ©Ÿèƒ½ãŒå®Ÿè£…ã•ã‚Œã¦ã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯ã™ã‚‹)
  */
 identify_cpu:
 
-	/* •¨—ƒAƒhƒŒƒX‚ÅƒXƒ^ƒbƒN‚Ìİ’è‚ğs‚¤ */
+	/* ç‰©ç†ã‚¢ãƒ‰ãƒ¬ã‚¹ã§ã‚¹ã‚¿ãƒƒã‚¯ã®è¨­å®šã‚’è¡Œã† */
 	movw	%dx, %ss
 	movl	$(_ADDR_STACK + _SIZE_STACK), %esp
 
-	/* EFLAGS‚ğƒNƒŠƒA‚·‚é */
+	/* EFLAGSã‚’ã‚¯ãƒªã‚¢ã™ã‚‹ */
 	pushl	$0
 	popfl
 
 #if 0
-	/* CPUID–½—ß‚ª—˜—p‚Å‚«‚é‚±‚Æ‚ğƒ`ƒFƒbƒN‚·‚é */
+	/* CPUIDå‘½ä»¤ãŒåˆ©ç”¨ã§ãã‚‹ã“ã¨ã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹ */
 	pushl	$(EFLAGS_ID)
 	popfl
 	pushfl
@@ -140,7 +140,7 @@ identify_cpu:
 	jmp		on_panic
   .L_cpuid_ok:
 
-	/* PSE(ƒy[ƒWƒTƒCƒYŠg’£)‚ª—˜—p‚Å‚«‚é‚±‚Æ‚ğƒ`ƒFƒbƒN‚·‚é */
+	/* PSE(ãƒšãƒ¼ã‚¸ã‚µã‚¤ã‚ºæ‹¡å¼µ)ãŒåˆ©ç”¨ã§ãã‚‹ã“ã¨ã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹ */
 	movl	$1, %eax
 	cpuid
 	testl	$CPUID_FEAT_PSE, %edx
@@ -151,7 +151,7 @@ identify_cpu:
 #endif
 
 /*
- * ƒy[ƒWƒ“ƒO‚ğ—LŒø‚É‚·‚é
+ * ãƒšãƒ¼ã‚¸ãƒ³ã‚°ã‚’æœ‰åŠ¹ã«ã™ã‚‹
  */
 init_paging:
 
@@ -281,11 +281,11 @@ init_paging:
 	movl    $(_ADDR_STACK + _SIZE_STACK + SYS_START), %esp
 
 /*
- * GDT‚Ì‰Šú‰»‚ğs‚¤ (GRUB‚ª—pˆÓ‚µ‚½GDT‚ğ’u‚«Š·‚¦‚é)
+ * GDTã®åˆæœŸåŒ–ã‚’è¡Œã† (GRUBãŒç”¨æ„ã—ãŸGDTã‚’ç½®ãæ›ãˆã‚‹)
  */
 init_gdt:
 
-	/* TSSƒfƒXƒNƒŠƒvƒ^‚Ìƒx[ƒXƒtƒB[ƒ‹ƒh‚ğİ’è‚·‚é */
+	/* TSSãƒ‡ã‚¹ã‚¯ãƒªãƒ—ã‚¿ã®ãƒ™ãƒ¼ã‚¹ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã‚’è¨­å®šã™ã‚‹ */
 	movl	$(gdt_entries + SEG_TSS), %edi
 	movl	$(tss_area), %eax
 	movb	%al, 2(%edi);	shrl	$8, %eax;
@@ -293,18 +293,18 @@ init_gdt:
 	movb	%al, 4(%edi);	shrl	$8, %eax;
 	movb	%al, 7(%edi)
 
-	/* GDTR‚ÉGDT‚ğƒ[ƒh‚·‚é */
+	/* GDTRã«GDTã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ */
 	movl	%esp, %ebx
 	subl	$8, %ebx
 	movw	$(_SIZE_GDT - 1),	0(%ebx)
 	movl	$(gdt_entries),		2(%ebx)
 	lgdt	(%ebx)
 
-	/* ì¬‚µ‚½ƒZƒOƒƒ“ƒgã‚ÉƒWƒƒƒ“ƒv‚·‚é */
+	/* ä½œæˆã—ãŸã‚»ã‚°ãƒ¡ãƒ³ãƒˆä¸Šã«ã‚¸ãƒ£ãƒ³ãƒ—ã™ã‚‹ */
 	ljmp	$(SEG_SYS_CODE), $(.L_new_seg)
   .L_new_seg:
 
-	/* ƒZƒOƒƒ“ƒg‚ğİ’è‚·‚é */
+	/* ã‚»ã‚°ãƒ¡ãƒ³ãƒˆã‚’è¨­å®šã™ã‚‹ */
 	movl	$(SEG_SYS_DATA), %eax
 	movw	%ax, %ds
 	movw	%ax, %es
@@ -315,10 +315,10 @@ init_gdt:
 	ltr 	%ax
 
 /*
- * ˆê“I‚ÈIDT‚ğì¬‚·‚é
+ * ä¸€æ™‚çš„ãªIDTã‚’ä½œæˆã™ã‚‹
  */
 create_idt:
-	/* ƒGƒ“ƒgƒŠ‚ğì¬‚·‚é */
+	/* ã‚¨ãƒ³ãƒˆãƒªã‚’ä½œæˆã™ã‚‹ */
 	movl	$(_ADDR_IDT + SYS_START), %edi
 	movl	$(on_bad_int), %eax
 	movl	%eax, %ebx;	shrl	$16, %ebx
@@ -330,7 +330,7 @@ create_idt:
 	movl	0(%edi), %eax
 	movl	4(%edi), %ebx
 
-	/* ƒGƒ“ƒgƒŠ‚ğ256ŒÂ•ªƒRƒs[‚·‚é */
+	/* ã‚¨ãƒ³ãƒˆãƒªã‚’256å€‹åˆ†ã‚³ãƒ”ãƒ¼ã™ã‚‹ */
 	movl	$(_ADDR_IDT + SYS_START), %edi
 	movl	$256, %ecx
   .L_idt:
@@ -339,7 +339,7 @@ create_idt:
 	addl	$8, %edi
 	loop .L_idt
 
-	/* IDTR‚Éƒ[ƒh‚·‚é */
+	/* IDTRã«ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ */
 	movl	%esp, %ebx
 	subl	$8, %ebx
 	movw	$(256*8-1), (%ebx)
@@ -347,7 +347,7 @@ create_idt:
 	lidt	(%ebx)
 
 /*
- * C‚ÌƒR[ƒh‚ÉƒWƒƒƒ“ƒv‚·‚é
+ * Cã®ã‚³ãƒ¼ãƒ‰ã«ã‚¸ãƒ£ãƒ³ãƒ—ã™ã‚‹
  */
 jump_to_extern_c:
 	/* jump to cmain() */
@@ -355,8 +355,8 @@ jump_to_extern_c:
 
 
 /*
- * ƒƒbƒZ[ƒW‚ğ•\¦‚µ‚Ä’â~‚·‚é
- * (%esi‚ÉNULI’[•¶š—ñ‚ÌƒAƒhƒŒƒX‚ğw’è‚·‚é)
+ * ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ç¤ºã—ã¦åœæ­¢ã™ã‚‹
+ * (%esiã«NULçµ‚ç«¯æ–‡å­—åˆ—ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®šã™ã‚‹)
  */
 on_panic:
 #if defined(HAL_BOARD_PCAT)
@@ -388,7 +388,7 @@ on_panic:
 	jmp		.L_on_panic_hlt_loop
 
 /*
- * Š„‚è‚İƒnƒ“ƒhƒ‰
+ * å‰²ã‚Šè¾¼ã¿ãƒãƒ³ãƒ‰ãƒ©
  */
 on_bad_int:
 	movl	$(msg_bad_int), %esi
