@@ -3,7 +3,6 @@
  * PC/AT BIOS loads it. Output will be flat-binary via objcopy.
  */
 
-
 OUTPUT_FORMAT("elf32-i386")
 
 ENTRY(_start)

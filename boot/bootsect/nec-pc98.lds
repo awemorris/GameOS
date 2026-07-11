@@ -1,8 +1,9 @@
 /*
- * Link the IPL as raw code starting at 0x7C00, matching where the
- * PC-98 BIOS loads it. Output will be flat-binary via objcopy.
+ * Link the IPL as raw code starting at 0x0.
+ * The actual address will be:
+ *   0x1fc00: IDE HDD
+ *   0x1fe00: FDD
  */
-
 
 OUTPUT_FORMAT("elf32-i386")
 

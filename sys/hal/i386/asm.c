@@ -6,18 +6,19 @@
 
 static void idle_task();
 
+extern void cons_init(void);
+extern void mem_init(void);
+extern void irq_init(void);
+extern void int_init(void);
+extern void univ_init(void);
+extern void task_init(void);
+extern void sched_init(void);
+extern void clock_init(void);
+extern void testmain(void);
+
 void cmain()
 {
 	task_t t;
-	extern void cons_init();
-	extern void mem_init();
-	extern void irq_init();
-	extern void int_init();
-	extern void univ_init();
-	extern void task_init();
-	extern void sched_init();
-	extern void clock_init();
-	extern void testmain();
 
 	/* 依存関係に基づいた順でサブモジュールを初期化する */
 	cons_init();	/* 簡易コンソール		*/

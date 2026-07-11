@@ -1,4 +1,5 @@
 #include <sys/kern/sched.h>
+#include "../i386/clock.h"
 #include "../i386/irq.h"
 #include "../i386/asm.h"
 #include "../i386/pic.h"

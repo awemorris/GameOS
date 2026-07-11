@@ -7,8 +7,8 @@
 #include "asm.h"
 
 struct univ_info *univ_list_head;	/* univリストの先頭*/
-univ_t	*cur_univ;					/* 現在選択されているuniv */
-int		free_id_top;				/* 未使用IDの先頭 */
+univ_t *cur_univ;			/* 現在選択されているuniv */
+int free_id_top;			/* 未使用IDの先頭 */
 
 /*
  * アドレス空間管理部を初期化する

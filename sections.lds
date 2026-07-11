@@ -22,8 +22,6 @@ SECTIONS
         text_start = .;
         _text_start = .;
 
-        gravity.elf.dir/sys/arch/x86/locore.S.o:(.text)
-
         *(.text)
         *(.text.*)
 

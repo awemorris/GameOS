@@ -3,7 +3,6 @@
 #include "../i386/irq.h"
 #include "../i386/asm.h"
 #include "../i386/pic.h"
-#include "irq.h"
 
 static clock_t cpu_tick_count;
 
