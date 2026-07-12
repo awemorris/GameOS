@@ -28,7 +28,7 @@ void cmain()
 	task_init();
 	sched_init();
 	clock_init();
-
+	
 	t = task_create(UNIV_SYS, testmain, NULL, NULL);
 	sched_link(t, SCHED_LIST_ACTIVE, SCHED_PRIOR_LOW, 0);
 

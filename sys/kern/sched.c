@@ -63,8 +63,8 @@ void sched_link(
 	struct schedulable		*s;
 	irqlock_t	irqlock;
 
-	CRT_ASSERT(list == SCHED_LIST_UNLINKED || list == SCHED_LIST_ACTIVE || list == SCHED_LIST_TIMEWAIT);
-	CRT_ASSERT(priority >= 0 && priority < SCHED_PRIOR_LEVELS);
+	assert(list == SCHED_LIST_UNLINKED || list == SCHED_LIST_ACTIVE || list == SCHED_LIST_TIMEWAIT);
+	assert(priority >= 0 && priority < SCHED_PRIOR_LEVELS);
 
 	/* schedulableにキャストする */
 	s = (struct schedulable *)t;
@@ -89,7 +89,7 @@ void sched_link(
 			timewaitlist_del(&slist->timewait_head, s);
 			break;
 		default:
-			CRT_FATAL("unexpected value");
+			fatal("unexpected value");
 			break;
 		}
 		s->status = SCHED_LIST_UNLINKED;
@@ -113,7 +113,7 @@ void sched_link(
 			timewaitlist_add(&slist->timewait_head, s);
 			break;
 		default:
-			CRT_FATAL("unexpected value");
+			fatal("unexpected value");
 			break;
 		}
 	}
@@ -217,8 +217,8 @@ static void activelist_add(struct schedulable **head, struct schedulable *s)
 {
 	struct schedulable *ins;
 
-	CRT_ASSERT(head != NULL);
-	CRT_ASSERT(s != NULL);
+	assert(head != NULL);
+	assert(s != NULL);
 
 	/* リストが空の場合、リストの先頭にセットする */
 	if(*head == NULL) {
@@ -240,9 +240,9 @@ static void activelist_del(struct schedulable **head, struct schedulable *s)
 {
 	struct schedulable *prev;
 
-	CRT_ASSERT(head != NULL);
-	CRT_ASSERT(*head != NULL);
-	CRT_ASSERT(s != NULL);
+	assert(head != NULL);
+	assert(*head != NULL);
+	assert(s != NULL);
 
 	if(s == s->next) {
 		/* リストにノードが１つしかない場合 */
@@ -273,8 +273,8 @@ static void activelist_turn(struct schedulable **head)
 /* timewaitリストにタスクを追加する */
 static void timewaitlist_add(struct schedulable **head, struct schedulable *s)
 {
-	CRT_ASSERT(head != NULL);
-	CRT_ASSERT(s != NULL);
+	assert(head != NULL);
+	assert(s != NULL);
 
 	/* 待機終了時刻とプライオリティから挿入位置を求める */
 	struct schedulable *search = *head, *prev = NULL;
@@ -303,9 +303,9 @@ static void timewaitlist_del(struct schedulable **head, struct schedulable *s)
 {
 	struct schedulable *prev;
 
-	CRT_ASSERT(head != NULL);
-	CRT_ASSERT(*head != NULL);
-	CRT_ASSERT(s != NULL);
+	assert(head != NULL);
+	assert(*head != NULL);
+	assert(s != NULL);
 
 	/* sをリンクリストから切り離す */
 	if(*head == s) {

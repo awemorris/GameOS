@@ -25,18 +25,18 @@ static uint32 *pagemap_tbl;
 /*
  * Forward declaration
  */
-static void init_pagemap_tbl();
+static void init_pagemap_tbl(void);
 
 /*
  * Initialize pmem module.
  */
-void pmem_init()
+void pmem_init(void)
 {
 	init_pagemap_tbl();
 }
 
 /* 物理メモリのマッピングを検出する */
-static void init_pagemap_tbl()
+static void init_pagemap_tbl(void)
 {
 	struct multiboot_info *mbi;
 	uint32	total, avail_top, i;
@@ -44,16 +44,14 @@ static void init_pagemap_tbl()
 	/* ブート情報のメモリ項目を利用できることを確認する */
 	mbi = (struct multiboot_info *) (SYS_START + ADDR_BOOT_INFO);
 	if(!(mbi->flags & MBINFO_FLAG_MEMORY))
-		CRT_FATAL("can't detect memory size");
-
-	crt_printf("upper %d kb.\n", (uint32)mbi->mem_upper);
+		fatal("Can't detect memory size");
 
 	/* 物理メモリサイズを取得する */
 	total = ((uint32)mbi->mem_upper + 1024) * 1024;	/* 上位メモリ(kb)+下位1024kb */
 	phys_pages = total / PAGE_SIZE;
-	crt_printf("mem_init(): %d kb detected.\n", total / 1024);
+	printf("Memory: %d kb detected.\n", total / 1024);
 	if(total < 0x400000)
-		CRT_FATAL("too few physical memory");
+		fatal("Too few physical memory");
 
 	/* TODO: 利用可能な先頭アドレスを取得する */
 	avail_top = 0x200000;
@@ -61,12 +59,12 @@ static void init_pagemap_tbl()
 	/* ページ使用状況テーブルを作成する */
 	pagemap_tbl = (uint32 *) avail_top;
 	avail_top += (phys_pages + 31) / 32;
-	crt_memset(pagemap_tbl, 0, (phys_pages+31)/32);
+	memset(pagemap_tbl, 0, (phys_pages+31)/32);
 
 	/* 利用できないページにマークを付ける */
 	/* (TODO: ブート情報のメモリマップを利用, 下位メモリも利用可能に) */
 	avail_top = (avail_top + PAGE_SIZE - 1) / PAGE_SIZE;
-	for(i=0; i<avail_top; i++)
+	for (i=0; i<avail_top; i++)
 		PAGEMAP_SET(i);
 }
 

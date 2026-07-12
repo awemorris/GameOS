@@ -73,9 +73,8 @@ void int_handler(struct interrupt_frame *fp)
 
 		if(in_service == -1) {
 			is_handled = 1;
-			crt_printf("\nIRQ not in service (pic_isr=%02X, int=%02X)\n",
-				in_service, int_num);
-			CRT_FATAL("IRQ error");
+			printf("\nIRQ not in service (pic_isr=%02X, int=%02X)\n", in_service, int_num);
+			fatal("IRQ error");
 		} else {
 			/* IRQハンドラをコールする */
 			irq_handler(irq_num);
@@ -95,8 +94,8 @@ void int_handler(struct interrupt_frame *fp)
 	 * ハンドルされなかった場合
 	 */
 	if(!is_handled) {
-		crt_printf("\nIRQ handler not installed (int %02X)\n" ,int_num);
-		CRT_FATAL("IRQ error");
+		printf("\nIRQ handler not installed (int %02X)\n" ,int_num);
+		fatal("IRQ error");
 	}
 
 	/* 割り込み処理ハンドラ内で再スケジュールが要求された場合*/
@@ -166,51 +165,49 @@ static void handle_fault(struct interrupt_frame *fp)
 	int int_num = fp->int_num;
 
 	if (fp->cs & 3) {
-		crt_printf(
-			"[INT] int 0x%02X handled!\n"
-			"CS:  %04X  EIP: %08X\n"
-			"DS:  %04X  ES:  %04X  SS: %04X\n"
-			"EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X\n"
-			"ESI: %08X  EDI: %08X  EBP: %08X  ESP: %08X\n"
-			"EFLAGS: %08X  ERRORCODE: %08X\n",
-			int_num,
-			fp->cs,
-			fp->eip,
-			fp->regs.ds,
-			fp->regs.es,
-			fp->user_ss,
-			fp->regs.eax,
-			fp->regs.ebx,
-			fp->regs.ecx,
-			fp->regs.edx,
-			fp->regs.esi,
-			fp->regs.edi,
-			fp->regs.ebp,
-			fp->user_esp,
-			fp->eflags,
-			fp->error_code);
+		printf("[INT] int 0x%02X handled!\n"
+		       "CS:  %04X  EIP: %08X\n"
+		       "DS:  %04X  ES:  %04X  SS: %04X\n"
+		       "EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X\n"
+		       "ESI: %08X  EDI: %08X  EBP: %08X  ESP: %08X\n"
+		       "EFLAGS: %08X  ERRORCODE: %08X\n",
+		       int_num,
+		       fp->cs,
+		       fp->eip,
+		       fp->regs.ds,
+		       fp->regs.es,
+		       fp->user_ss,
+		       fp->regs.eax,
+		       fp->regs.ebx,
+		       fp->regs.ecx,
+		       fp->regs.edx,
+		       fp->regs.esi,
+		       fp->regs.edi,
+		       fp->regs.ebp,
+		       fp->user_esp,
+		       fp->eflags,
+		       fp->error_code);
 	} else {
-		crt_printf(
-			"[INT] int 0x%02X handled!\n"
-			"CS:  %04X  EIP: %08X\n"
-			"DS:  %04X  ES:  %04X\n"
-			"EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X\n"
-			"ESI: %08X  EDI: %08X  EBP: %08X\n"
-			"EFLAGS: %08X  ERRORCODE: %08X\n",
-			int_num,
-			fp->cs,
-			fp->eip,
-			fp->regs.ds,
-			fp->regs.es,
-			fp->regs.eax,
-			fp->regs.ebx,
-			fp->regs.ecx,
-			fp->regs.edx,
-			fp->regs.esi,
-			fp->regs.edi,
-			fp->regs.ebp,
-			fp->eflags,
-			fp->error_code);
+		printf("[INT] int 0x%02X handled!\n"
+		       "CS:  %04X  EIP: %08X\n"
+		       "DS:  %04X  ES:  %04X\n"
+		       "EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X\n"
+		       "ESI: %08X  EDI: %08X  EBP: %08X\n"
+		       "EFLAGS: %08X  ERRORCODE: %08X\n",
+		       int_num,
+		       fp->cs,
+		       fp->eip,
+		       fp->regs.ds,
+		       fp->regs.es,
+		       fp->regs.eax,
+		       fp->regs.ebx,
+		       fp->regs.ecx,
+		       fp->regs.edx,
+		       fp->regs.esi,
+		       fp->regs.edi,
+		       fp->regs.ebp,
+		       fp->eflags,
+		       fp->error_code);
 	}
 
 	/* Halt. */

@@ -58,7 +58,7 @@ void irq_enter_isr(int irq_num)
 	ENTER_IRQLOCK(irqlock)
 	{
 		/* すでにサービスタスクが登録されていないかチェックする */
-		CRT_ASSERT(irq_service[irq_num].ist == NULL);
+		assert(irq_service[irq_num].ist == NULL);
 
 		/* 実行中のタスクを取得してISRタスクとして登録する */
 		t = task_get_current();
@@ -124,7 +124,7 @@ void irq_handler(int irq_num)
 
 	/* 登録されているサービスタスクを取得する */
 	t = irq_service[irq_num].ist;
-	CRT_ASSERT(t != NULL);
+	assert(t != NULL);
 
 	/* サービスタスクの登録を抹消する */
 	irq_service[irq_num].ist = NULL;

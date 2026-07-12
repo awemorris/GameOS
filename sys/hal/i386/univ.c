@@ -28,10 +28,10 @@ univ_t univ_create()
 	int i;
 
 	/* 構造体のメモリを確保して初期化する */
-	ui = (struct univ_info *) crt_malloc(sizeof(struct univ_info));
-	ui->univ_id		= free_id_top++;
-	ui->ptbl_head	= NULL;
-	ui->next		= NULL;
+	ui = (struct univ_info *)malloc(sizeof(struct univ_info));
+	ui->univ_id = free_id_top++;
+	ui->ptbl_head = NULL;
+	ui->next = NULL;
 
 	/* PDTを初期化する */
 	for(i=0; i<1024; i++)
@@ -60,7 +60,7 @@ void univ_switch(univ_t u)
 	/* PDTを切り替える */
 	asm_load_cr3((uint32)ui->pdt - SYS_START);
 
-	crt_puts("\n[univ changed!]");
+	puts("\n[univ changed!]");
 }
 
 /*

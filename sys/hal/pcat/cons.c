@@ -87,7 +87,7 @@ static void clear_screen()
 	VRAMCHAR space_char;
 
 	space_char = MK_VRAMCHAR(' ', cur_attr);
-	crt_memset16(vram, space_char, columns * lines);
+	memset16(vram, space_char, columns * lines);
 	set_cursor_pos(0, 0);
 }
 
@@ -157,7 +157,7 @@ static void scroll_line()
 
 	/* Å‰ºs‚ğƒNƒŠƒA‚·‚é */
 	space_char = ' ' | (cur_attr << 8);
-	crt_memset16(p, space_char, columns);
+	memset16(p, space_char, columns);
 }
 
 

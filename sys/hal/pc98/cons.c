@@ -11,9 +11,6 @@
 #define VRAM_TEXT_ADDR		(0xA0000)
 #define VRAM_ATTR_ADDR		(0xA2000)
 
-/* vram character format */
-#define MK_VRAMCHAR(c, attr)	((c) | ((attr) << 8))
-
 /* screen setting */
 static uint8 *vram_text = (uint8 *)VRAM_TEXT_ADDR + SYS_START;
 static uint8 *vram_attr = (uint8 *)VRAM_ATTR_ADDR + SYS_START;
@@ -32,125 +29,108 @@ static void set_cursor_pos(int line, int col);
 static void scroll_line();
 static int get_keyboard_char();
 
-/*
- * 簡易コンソールを初期化する
- */
-void cons_init()
+void
+cons_init(void)
 {
-	/* 画面をクリアする */
 	clear_screen();
 }
 
-/*
- * clear screen
- */
-void cons_cls()
+void
+cons_cls(void)
 {
-	/* 画面をクリアする */
 	clear_screen();
 }
 
-/*
- * 文字を出力する
- */
-void cons_putc(int c)
+void
+cons_putc(
+	int c)
 {
-	/* 文字を出力する */
 	put_char(c);
 }
 
-/*
- * 文字列を出力する
- */
-void cons_puts(const char *s)
+void
+cons_puts(
+	const char *s)
 {
-	/* 一文字ずつ出力する */
 	while(*s != '\0')
 		put_char(*s++);
 }
 
-/*
- * 1文字入力する
- */
-int cons_getc()
+int
+cons_getc(void)
 {
 	return get_keyboard_char();
 }
 
-
-/*
- * clear screen
- */
-static void clear_screen()
+static void
+clear_screen(void)
 {
-	crt_memset(vram_text, 0, 160 * 25);
+	memset(vram_text, 0, 160 * 25);
 	set_cursor_pos(0, 0);
 }
 
-/*
- * put a character
- */
-static void put_char(int c)
+static void
+put_char(
+	int c)
 {
-	/* 文字ごとに処理を行う */
 	switch(c) {
 	case '\n':
-		/* 改行する */
 		cur_line++, cur_col = 0;
 		break;
 	default:
-		/* 文字と属性を書き込む */
 		*(vram_text + cur_line * 160 + cur_col * 2) = c;
 		cur_col++;
 		break;
 	}
 
-	/* カーソル位置が行の右端を越えた場合、次の行に移動する */
+	/* Line feed. */
 	if(cur_col == columns)
 		cur_col = 0, cur_line++;
 
-	/* カーソル位置が最下行を越えた場合、スクロールする */
+	/* Scroll. */
 	if(cur_line == lines) {
 		scroll_line();
 		cur_line = lines - 1, cur_col = 0;
 	}
 
-	/* カーソル位置を更新する */
-	//set_cursor_pos(cur_line, cur_col);
+	/* Update cursor. */
+	set_cursor_pos(cur_line, cur_col);
 }
 
-/* move cursor */
-static void set_cursor_pos(int line, int col)
+static void
+set_cursor_pos(
+	int line,
+	int col)
 {
-        uint16 addr = line * 80 + col;
+	uint16 addr = line * 80 + col;
+	int timeout;
 
-        /* Wait for GDC FIFO READY. */
-        while ((asm_inb(0x60) & 0x04) == 0)
-		;
+	/* Wait for FIFO full (bit1) is cleared. */
+	for (timeout = 100000; timeout > 0; timeout--) {
+		if((asm_inb(0x60) & 0x02) == 0)
+			break;
+	}
+	if(timeout == 0)
+		return;	/* GDC no response. */
 
-        /* Send CSRW (Cursor Write: 0x49) control command to GDC. */
-        asm_outb(0x60, 0x49);
+	/* CSRW cmd */
+	asm_outb(0x62, 0x49);
+	asm_outb(0x60, addr & 0xff);
+	asm_outb(0x60, (addr >> 8) & 0xff);
 
-        /* Send lower 8-bit of the cursor address. */
-        asm_outb(0x62, addr & 0xff);
-
-        /* Send higher 8-bit of the cursor address. */
-        asm_outb(0x62, (addr >> 8) & 0xff);
-
-        /* Update the position. */
-        cur_line = line;
-        cur_col  = col;
+	cur_line = line;
+	cur_col  = col;
 }
 
-/* scroll 1-line */
-static void scroll_line()
+static void
+scroll_line(void)
 {
-	crt_memcpy(vram_text, vram_text + 160, 160 * 24);
-	crt_memset(vram_text + 160 * 24, 0, 160);
+	memcpy(vram_text, vram_text + 160, 160 * 24);
+	memset(vram_text + 160 * 24, 0, 160);
 }
 
 /*
- * 簡易キーボードドライバ
+ * Simple Keybaord Driver.
  */
 
 #define KBD_BUF_SIZE	(256)
@@ -165,7 +145,7 @@ int get_keyboard_char()
 {
         uint8 scancode;
 
-        /* キーボードから1文字以上受信する */
+        /* Receive 1 character from keyboard. */
         for(;;) {
                 irq_enter_isr(IRQ_KEYBOARD);
 

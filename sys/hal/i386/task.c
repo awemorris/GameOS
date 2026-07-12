@@ -27,12 +27,12 @@ void task_init()
 	task_list = NULL;
 
 	/* TSSをゼロクリアする */
-	crt_memset(tss_area, 0, 104);
+	memset(tss_area, 0, 104);
 	tss_area[2] = SEG_SYS_DATA;	/* SS0 */
 
 	/* 現在CPUで実行中のコンテキストを表すタスクを作成する */
-	ti = crt_malloc(sizeof(struct task_info));
-	crt_memset(ti, 0, sizeof(struct task_info));
+	ti = malloc(sizeof(struct task_info));
+	memset(ti, 0, sizeof(struct task_info));
 	ti->universe = UNIV_SYS;		/* カーネル空間で動作するタスクである */
 	ti->run_cpu = 0;			/* CPUの番号 */
 
@@ -47,21 +47,21 @@ void task_init()
  * 新しいタスクを作成する
  */
 task_t task_create(
-	univ_t	universe,	/* 動作アドレス空間 */
-	void	*start,		/* 開始関数のアドレス */
-	void	*param,		/* 開始関数の引数 */
-	void	*user_sp)	/* ユーザスタックポインタ(カーネルタスクではNULL) */
+	univ_t universe,	/* 動作アドレス空間 */
+	void *start,		/* 開始関数のアドレス */
+	void *param,		/* 開始関数の引数 */
+	void *user_sp)	/* ユーザスタックポインタ(カーネルタスクではNULL) */
 {
 	struct task_info *ti;
 
 	/* タスク構造体のメモリを確保してメンバを設定する */
-	ti = crt_malloc(sizeof(struct task_info));
-	crt_memset(ti, 0, sizeof(struct task_info));
+	ti = malloc(sizeof(struct task_info));
+	memset(ti, 0, sizeof(struct task_info));
 	ti->universe = universe;		/* 動作アドレス空間 */
 	ti->run_cpu = -1;			/* 非実行状態 */
 
 	/* システムスタックを割り当てる */
-	ti->sys_stack = crt_malloc(SYS_STACK_SIZE);
+	ti->sys_stack = malloc(SYS_STACK_SIZE);
 
 	/* システムスタックの最低位アドレスにタスク構造体へのポインタを格納する */
 	*(uint32 *)(ti->sys_stack) = (uint32) ti;
@@ -95,7 +95,7 @@ static void set_initial_resume_frame(
 
 	/* ゼロクリアする */
 	fp = ti->resume_esp;
-	crt_memset(fp, 0, sizeof(struct task_resume_frame));
+	memset(fp, 0, sizeof(struct task_resume_frame));
 
 	/* asm_task_entrypoint()から実行を開始する */
 	fp->eflags	= asm_get_eflags();
@@ -145,10 +145,10 @@ void task_destroy(task_t t)
 	tasklist_del(ti);
 
 	/* システムスタックとして割り当てたメモリを解放する*/
-	crt_free(ti->sys_stack);
+	free(ti->sys_stack);
 
 	/* task構造体に割り当てたメモリを解放する */
-	crt_free(ti);
+	free(ti);
 }
 
 /*

@@ -71,6 +71,9 @@ save_boot_info:
  */
 init_gdt:
 
+	movl $(0xa0000), %edi
+	movb $'3', (%edi)
+
 	/* GDTRにGDTをロードする */
 	movl	$(gdtr - SYS_START), %ebx
 	lgdt	(%ebx)
@@ -220,6 +223,7 @@ init_paging:
  * Setup TSS.
  */
 init_tss:
+
 	/* TSSデスクリプタのベースフィールドを設定する */
 	movl	$(gdt + SEG_TSS), %edi
 	movl	$(tss_area), %eax
@@ -238,6 +242,7 @@ init_tss:
  * 一時的なIDTを作成する
  */
 create_idt:
+
 	/* エントリを作成する */
 	movl	$(ADDR_IDT + SYS_START), %edi
 	movl	$(on_bad_int), %eax
@@ -270,68 +275,74 @@ create_idt:
  * Cのコードにジャンプする
  */
 jump_to_extern_c:
+
 	/* jump to cmain() */
 	jmp EXT_C(cmain)
 
-
 /*
- * メッセージを表示して停止する
- * (%esiにNUL終端文字列のアドレスを指定する)
+ * Print message and halt.
+ *  ESI = message
  */
 on_panic:
-#if defined(HAL_BOARD_PCAT)
-	movl	$0xb8000, %edi
-	movb	$0x0f, %al		/* text attr */
-	cld
-  .L_on_panic_msg_loop:
-	cmpb	$0, (%esi)
-	jz		.L_on_panic_hlt_loop
-	movsb	/* text char */
-	stosb	/* text attr */
-	jmp		.L_on_panic_msg_loop
-#endif
-#if defined(HAL_BOARD_PC98)
-	movl	$0xa0000, %edi
-	xor	    %al, %al		/* zero for character's second byte */
-	cld
-  .L_on_panic_msg_loop:
-	cmpb	$0, (%esi)
-	jz		.L_on_panic_hlt_loop
-	movsb	/* text char */
-	stosb	/* text char second byte */
-	jmp		.L_on_panic_msg_loop
-#endif
-
-	/* Halt. */
+	call print_message
   .L_on_panic_hlt_loop:
 	hlt
-	jmp		.L_on_panic_hlt_loop
+	jmp .L_on_panic_hlt_loop
 
 /*
- * 割り込みハンドラ
+ * Print message.
+ *  ESI = message
+ */
+print_message:
+#if defined(HAL_BOARD_PCAT)
+	movl $0xb8000, %edi
+	movb $0x0f, %al
+	cld
+    .L_msg_copy_loop:
+	cmpb $0, (%esi)
+	jz .L_msg_copy_end
+	movsb
+	stosb
+    .L_msg_copy_end:
+	ret
+#endif
+#if defined(HAL_BOARD_PC98)
+	movl $0xa0000, %edi
+	xor %al, %al
+	cld
+    .L_msg_copy_loop:
+	cmpb $0, (%esi)
+	jz .L_msg_copy_end
+	movsb
+	stosb
+    .L_msg_copy_end:
+	ret
+#endif
+
+/*
+ * Initial interrupt handler.
  */
 on_bad_int:
 	movl	$(msg_bad_int), %esi
 	jmp		on_panic
 
-
 /*
  * extern "C" linkage procedures
  */
 
-/* void _asm_cli() */
+/* void asm_cli() */
 	.global EXT_C(asm_cli)
 EXT_C(asm_cli):
 	cli
 	ret
 
-/* void _asm_sti() */
+/* void asm_sti() */
 	.global EXT_C(asm_sti)
 EXT_C(asm_sti):
 	sti
 	ret
 
-/* void _asm_outb(uint16 port, uint8 data) */
+/* void asm_outb(uint16 port, uint8 data) */
 	.global EXT_C(asm_outb)
 EXT_C(asm_outb):
 	pushl	%ebp
@@ -345,7 +356,7 @@ EXT_C(asm_outb):
 	popl	%ebp
 	ret
 
-/* void _asm_outw(uint16 port, uint8 data) */
+/* void asm_outw(uint16 port, uint8 data) */
 	.global EXT_C(asm_outw)
 EXT_C(asm_outw):
 	pushl	%ebp
@@ -359,7 +370,7 @@ EXT_C(asm_outw):
 	popl	%ebp
 	ret
 
-/* uint8 _asm_inb(uint16 port) */
+/* uint8 asm_inb(uint16 port) */
 	.global EXT_C(asm_inb)
 EXT_C(asm_inb):
 	pushl	%ebp
@@ -373,7 +384,7 @@ EXT_C(asm_inb):
 	popl	%ebp
 	ret
 
-/* uint8 _asm_inw(uint16 port) */
+/* uint8 asm_inw(uint16 port) */
 	.global EXT_C(asm_inw)
 EXT_C(asm_inw):
 	pushl	%ebp
@@ -387,42 +398,42 @@ EXT_C(asm_inw):
 	popl	%ebp
 	ret
 
-/* void _asm_fxsave(void *save_area) */
+/* void asm_fxsave(void *save_area) */
 	.global EXT_C(asm_fxsave)
 EXT_C(asm_fxsave):
 	movl	4(%esp), %eax
 	fxsave	(%eax)
 	ret
 
-/* void _asm_fxrstor(void *save_area) */
+/* void asm_fxrstor(void *save_area) */
 	.global EXT_C(asm_fxrstor)
 EXT_C(asm_fxrstor):
 	movl	4(%esp), %eax
 	fxrstor	(%eax)
 	ret
 
-/* void _asm_fnsave(void *save_area) */
+/* void asm_fnsave(void *save_area) */
 	.global EXT_C(asm_fnsave)
 EXT_C(asm_fnsave):
 	movl	4(%esp), %eax
 	fnsave	(%eax)
 	ret
 
-/* void _asm_frstor(void *save_area) */
+/* void asm_frstor(void *save_area) */
 	.global EXT_C(asm_frstor)
 EXT_C(asm_frstor):
 	movl	4(%esp), %eax
 	frstor	(%eax)
 	ret
 
-/* uint32 _asm_get_eflags() */
+/* uint32 asm_get_eflags() */
 	.global EXT_C(asm_get_eflags)
 EXT_C(asm_get_eflags):
 	pushf
 	popl	%eax
 	ret
 
-/* uint32 _asm_get_eip() */
+/* uint32 asm_get_eip() */
 	.global EXT_C(asm_get_eip)
 EXT_C(asm_get_eip):
 	call .L_eip
@@ -430,47 +441,47 @@ EXT_C(asm_get_eip):
 	popl	%eax
 	ret
 
-/* uint32 _asm_get_esp() */
+/* uint32 asm_get_esp() */
 	.global EXT_C(asm_get_esp)
 EXT_C(asm_get_esp):
 	pushl	%esp
 	popl	%eax
 	ret
 
-/* uint32 _asm_get_cr3() */
+/* uint32 asm_get_cr3() */
 	.global EXT_C(asm_get_cr3)
 EXT_C(asm_get_cr3):
 	movl	%cr3, %eax
 	ret
 
-/* uint32 _asm_set_cr3() */
+/* uint32 asm_set_cr3() */
 	.global EXT_C(asm_set_cr3)
 EXT_C(asm_set_cr3):
 	movl	4(%esp), %eax
 	movl	%eax, %cr3
 	ret
 
-/* void _asm_hlt() */
+/* void asm_hlt() */
 	.global EXT_C(asm_hlt)
 EXT_C(asm_hlt):
 	hlt
 	ret
 
-/* void _asm_lidt(void *idt_desc) */
+/* void asm_lidt(void *idt_desc) */
 	.global EXT_C(asm_lidt)
 EXT_C(asm_lidt):
 	movl	4(%esp), %eax
 	lidt	(%eax)
 	ret
 
-/* void _asm_load_pdt(uint32 addr) */
+/* void asm_load_pdt(uint32 addr) */
 	.global EXT_C(asm_load_cr3)
 EXT_C(asm_load_cr3):
 	movl	4(%esp), %eax
 	movl	%eax, %cr3
 	ret
 
-/* void _asm_flash_tlb() */
+/* void asm_flash_tlb() */
 	.global EXT_C(asm_flash_tlb)
 EXT_C(asm_flash_tlb):
 	movl	%cr3, %eax
@@ -480,16 +491,12 @@ EXT_C(asm_flash_tlb):
 /*
  * Messages
  */
-msg_invalid_bootloader:
-	.ascii "Invalid bootloader!\0"
-msg_cpuid_not_supported:
-	.ascii "Unsupported old CPU! (CPUID not supported)\0"
-msg_pse_not_supported:
-	.ascii "Unsupported old CPU! (PSE not supported)\0"
-msg_fpu_not_implemented:
-	.ascii "Unsupported old CPU! (on-chip FPU not implemented)\0"
-msg_bad_int:
-	.ascii "Bad Interrupt\0"
+msg_boot:			.ascii "Kernel booted.\0"
+msg_invalid_bootloader:		.ascii "Invalid bootloader!\0"
+msg_cpuid_not_supported:	.ascii "Unsupported old CPU! (CPUID not supported)\0"
+msg_pse_not_supported:		.ascii "Unsupported old CPU! (PSE not supported)\0"
+msg_fpu_not_implemented:	.ascii "Unsupported old CPU! (on-chip FPU not implemented)\0"
+msg_bad_int:			.ascii "Bad Interrupt\0"
 
 /*
  * GDT (Direct Mapped)
