@@ -1,6 +1,6 @@
 /*
  * univ.h
- *  - ‘½d‰¼‘z‹óŠÔƒTƒ|[ƒg
+ *  - å¤šé‡ä»®æƒ³ç©ºé–“ã‚µãƒãƒ¼ãƒˆ
  */
 
 #ifndef _SYS_ARCH_X86_UNIV_H_
@@ -9,22 +9,22 @@
 #include "sys/hal/univ.h"		/* interface definition */
 
 /*
- * ƒ†ƒjƒo[ƒX\‘¢‘Ì
+ * ãƒ¦ãƒ‹ãƒãƒ¼ã‚¹æ§‹é€ ä½“
  */
 struct univ_info {
-	uint32 pdt[1024];		/* ƒy[ƒWƒfƒBƒŒƒNƒgƒŠ */
+	uint32 pdt[1024];		/* ãƒšãƒ¼ã‚¸ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª */
 	int univ_id;			/* univ-ID */
-	struct ptbl *ptbl_head;		/* ƒy[ƒWƒe[ƒuƒ‹ */
-	struct univ_info *next;		/* ŠÇ——pƒŠƒ“ƒNƒŠƒXƒg */
+	struct ptbl *ptbl_head;		/* ãƒšãƒ¼ã‚¸ãƒ†ãƒ¼ãƒ–ãƒ« */
+	struct univ_info *next;		/* ç®¡ç†ç”¨ãƒªãƒ³ã‚¯ãƒªã‚¹ãƒˆ */
 };
 
 /*
- * ƒy[ƒWƒe[ƒuƒ‹ƒŠƒXƒgƒm[ƒh
+ * ãƒšãƒ¼ã‚¸ãƒ†ãƒ¼ãƒ–ãƒ«ãƒªã‚¹ãƒˆãƒãƒ¼ãƒ‰
  */
 struct ptbl {
-	uint32		v_addr;		/* ‚±‚Ìƒm[ƒh‚ª•\‚·æ“ª‰¼‘zƒAƒhƒŒƒX */
-	uint32		*pte;		/* ƒy[ƒWƒe[ƒuƒ‹(4KB‹«ŠE) */
-	struct ptbl	*next;		/* Ÿ‚Ìƒm[ƒh */
+	uint32		v_addr;		/* ã“ã®ãƒãƒ¼ãƒ‰ãŒè¡¨ã™å…ˆé ­ä»®æƒ³ã‚¢ãƒ‰ãƒ¬ã‚¹ */
+	uint32		*pte;		/* ãƒšãƒ¼ã‚¸ãƒ†ãƒ¼ãƒ–ãƒ«(4KBå¢ƒç•Œ) */
+	struct ptbl	*next;		/* æ¬¡ã®ãƒãƒ¼ãƒ‰ */
 };
 
 /*

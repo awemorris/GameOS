@@ -4,36 +4,36 @@
 #include <sys/types.h>
 
 /*
- * Š„‚è‚İ”­¶‚ÌƒXƒ^ƒbƒNƒtƒŒ[ƒ€
+ * å‰²ã‚Šè¾¼ã¿ç™ºç”Ÿæ™‚ã®ã‚¹ã‚¿ãƒƒã‚¯ãƒ•ãƒ¬ãƒ¼ãƒ 
  */
 struct interrupt_frame {
-	/* ƒŒƒWƒXƒ^•Û‘¶ˆæ(44ƒoƒCƒg)
-	 * (ƒJ[ƒlƒ‹‚ÌCƒR[ƒh‚ğÀs‚·‚é‚½‚ß‚É•Û‘¶‚ª•K—v‚ÈƒŒƒWƒXƒ^‚Ì‚İ) */
+	/* ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜åŸŸ(44ãƒã‚¤ãƒˆ)
+	 * (ã‚«ãƒ¼ãƒãƒ«ã®Cã‚³ãƒ¼ãƒ‰ã‚’å®Ÿè¡Œã™ã‚‹ãŸã‚ã«ä¿å­˜ãŒå¿…è¦ãªãƒ¬ã‚¸ã‚¹ã‚¿ã®ã¿) */
 	struct {
 		uint32	edi;		/* +0         */
 		uint32	esi;		/* +4         */
 		uint32	ebp;		/* +8         */
-		uint32	_esp;		/* +16 (–³‹) */
+		uint32	_esp;		/* +16 (ç„¡è¦–) */
 		uint32	ebx;		/* +20        */
 		uint32	edx;		/* +24        */
 		uint32	ecx;		/* +28        */
 		uint32	eax;		/* +32 pushal */
-		uint16	es;			/* +36 push %es */	uint16 __pad_0;
-		uint16	ds;			/* +40 push %ds */	uint16 __pad_1;
+		uint16	es;		/* +36 push %es */	uint16 __pad_0;
+		uint16	ds;		/* +40 push %ds */	uint16 __pad_1;
 	} regs;
 
-	/* Š„‚è‚İ”Ô† */
+	/* å‰²ã‚Šè¾¼ã¿ç•ªå· */
 	uint32	int_num;	/* +44 */
 
-	/* ƒGƒ‰[ƒR[ƒh(int 0x0D, 0x0E ˆÈŠO‚Å‚Í•s’è’l) */
+	/* ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰(int 0x0D, 0x0E ä»¥å¤–ã§ã¯ä¸å®šå€¤) */
 	uint32	error_code;	/* +48 */
 
-	/* Š„‚è‚İ”­¶‚ÌCS:EIP‚ÆEFLAGS */
+	/* å‰²ã‚Šè¾¼ã¿ç™ºç”Ÿæ™‚ã®CS:EIPã¨EFLAGS */
 	uint32	eip;		/* +52 */
 	uint16	cs;			/* +56 */	uint16 __pad_2;
 	uint32	eflags;		/* +60 */
 
-	/* “®ìƒŒƒxƒ‹ˆÚs‚Ì‹ŒSS:ESP */
+	/* å‹•ä½œãƒ¬ãƒ™ãƒ«ç§»è¡Œæ™‚ã®æ—§SS:ESP */
 	uint32	user_esp;	/* +64 */
 	uint16	user_ss;	/* +68 */	uint16 __pad_3;
 };
@@ -43,7 +43,7 @@ struct interrupt_frame {
  */
 void int_init(void);
 void int_handler(struct interrupt_frame *fp);	/* called from trap.s */
-void int_set_resched_flag(void);		/* ÄƒXƒPƒWƒ…[ƒ‹ƒtƒ‰ƒO‚ğƒZƒbƒg‚·‚é */
+void int_set_resched_flag(void);		/* å†ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ãƒ•ãƒ©ã‚°ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 
 /*
  * trap.S

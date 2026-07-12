@@ -1,5 +1,5 @@
 /*
- * •¨—ƒƒ‚ƒŠŠÇ—•”
+ * Physical Memory Management
  */
 
 #include <sys/hal/irq.h>
@@ -8,169 +8,175 @@
 #include "asm.h"
 #include "multiboot.h"
 
-/* ƒy[ƒWg—pó‹µƒe[ƒuƒ‹‚ÌƒGƒ“ƒgƒŠ‚ğ‘€ì‚·‚é */
 #define PAGEMAP_GET(n)		(pagemap_tbl[(n)>>5] & (1<<((n)&31)))
 #define PAGEMAP_SET(n)		(pagemap_tbl[(n)>>5] |= (1<<((n)&31)))
 #define PAGEMAP_RESET(n)	(pagemap_tbl[(n)>>5] &= ~(1<<((n)&31)))
 
-/* •¨—ƒy[ƒW” */
+/*
+ * Number of Physical Pages
+ */
 static uint32 phys_pages;
 
-/* ƒy[ƒWg—pó‹µƒe[ƒuƒ‹ */
+/*
+ * Page Usage Table
+ */
 static uint32 *pagemap_tbl;
 
-/* forward declaration */
+/*
+ * Forward declaration
+ */
 static void init_pagemap_tbl();
 
 /*
- * ƒƒ‚ƒŠŠÇ—ƒ‚ƒWƒ…[ƒ‹‚ğ‰Šú‰»‚·‚é
+ * Initialize pmem module.
  */
 void pmem_init()
 {
-	/* ƒy[ƒWg—pó‹µƒe[ƒuƒ‹‚ğ‰Šú‰»‚·‚é */
 	init_pagemap_tbl();
 }
 
-/* •¨—ƒƒ‚ƒŠ‚Ìƒ}ƒbƒsƒ“ƒO‚ğŒŸo‚·‚é */
+/* ç‰©ç†ãƒ¡ãƒ¢ãƒªã®ãƒãƒƒãƒ”ãƒ³ã‚°ã‚’æ¤œå‡ºã™ã‚‹ */
 static void init_pagemap_tbl()
 {
 	struct multiboot_info *mbi;
 	uint32	total, avail_top, i;
 
-	/* ƒu[ƒgî•ñ‚Ìƒƒ‚ƒŠ€–Ú‚ğ—˜—p‚Å‚«‚é‚±‚Æ‚ğŠm”F‚·‚é */
+	/* ãƒ–ãƒ¼ãƒˆæƒ…å ±ã®ãƒ¡ãƒ¢ãƒªé …ç›®ã‚’åˆ©ç”¨ã§ãã‚‹ã“ã¨ã‚’ç¢ºèªã™ã‚‹ */
 	mbi = (struct multiboot_info *) (SYS_START + ADDR_BOOT_INFO);
 	if(!(mbi->flags & MBINFO_FLAG_MEMORY))
 		CRT_FATAL("can't detect memory size");
 
-	/* •¨—ƒƒ‚ƒŠƒTƒCƒY‚ğæ“¾‚·‚é */
-	total = (mbi->mem_upper + 1024) * 1024;	/* ãˆÊƒƒ‚ƒŠ(kb)+‰ºˆÊ1024kb */
+	crt_printf("upper %d kb.\n", (uint32)mbi->mem_upper);
+
+	/* ç‰©ç†ãƒ¡ãƒ¢ãƒªã‚µã‚¤ã‚ºã‚’å–å¾—ã™ã‚‹ */
+	total = ((uint32)mbi->mem_upper + 1024) * 1024;	/* ä¸Šä½ãƒ¡ãƒ¢ãƒª(kb)+ä¸‹ä½1024kb */
 	phys_pages = total / PAGE_SIZE;
-	crt_printf("mem_init(): %d kb detected.\n", total/1024);
+	crt_printf("mem_init(): %d kb detected.\n", total / 1024);
 	if(total < 0x400000)
 		CRT_FATAL("too few physical memory");
 
-	/* TODO: —˜—p‰Â”\‚Èæ“ªƒAƒhƒŒƒX‚ğæ“¾‚·‚é */
+	/* TODO: åˆ©ç”¨å¯èƒ½ãªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—ã™ã‚‹ */
 	avail_top = 0x200000;
 
-	/* ƒy[ƒWg—pó‹µƒe[ƒuƒ‹‚ğì¬‚·‚é */
+	/* ãƒšãƒ¼ã‚¸ä½¿ç”¨çŠ¶æ³ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’ä½œæˆã™ã‚‹ */
 	pagemap_tbl = (uint32 *) avail_top;
 	avail_top += (phys_pages + 31) / 32;
 	crt_memset(pagemap_tbl, 0, (phys_pages+31)/32);
 
-	/* —˜—p‚Å‚«‚È‚¢ƒy[ƒW‚Éƒ}[ƒN‚ğ•t‚¯‚é */
-	/* (TODO: ƒu[ƒgî•ñ‚Ìƒƒ‚ƒŠƒ}ƒbƒv‚ğ—˜—p, ‰ºˆÊƒƒ‚ƒŠ‚à—˜—p‰Â”\‚É) */
+	/* åˆ©ç”¨ã§ããªã„ãƒšãƒ¼ã‚¸ã«ãƒãƒ¼ã‚¯ã‚’ä»˜ã‘ã‚‹ */
+	/* (TODO: ãƒ–ãƒ¼ãƒˆæƒ…å ±ã®ãƒ¡ãƒ¢ãƒªãƒãƒƒãƒ—ã‚’åˆ©ç”¨, ä¸‹ä½ãƒ¡ãƒ¢ãƒªã‚‚åˆ©ç”¨å¯èƒ½ã«) */
 	avail_top = (avail_top + PAGE_SIZE - 1) / PAGE_SIZE;
 	for(i=0; i<avail_top; i++)
 		PAGEMAP_SET(i);
 }
 
 /*
- * ˜A‘±‚µ‚½•¨—ƒƒ‚ƒŠ‚ğƒy[ƒW’PˆÊ‚ÅŠ„‚è“–‚Ä‚é
- *	o ƒJ[ƒlƒ‹ƒAƒhƒŒƒX‹óŠÔ‚©‚ç’¼ÚƒAƒNƒZƒX‰Â”\‚È‰ºˆÊ—Ìˆæ(<1GB)‚Ì‚İg—p‚·‚é
- *	o pmem_lock()‚É‚æ‚éƒƒbƒN‚ğs‚í‚¸‚ÉƒAƒNƒZƒX‚Å‚«‚é
+ * é€£ç¶šã—ãŸç‰©ç†ãƒ¡ãƒ¢ãƒªã‚’ãƒšãƒ¼ã‚¸å˜ä½ã§å‰²ã‚Šå½“ã¦ã‚‹
+ *	o ã‚«ãƒ¼ãƒãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ã‹ã‚‰ç›´æ¥ã‚¢ã‚¯ã‚»ã‚¹å¯èƒ½ãªä¸‹ä½é ˜åŸŸ(<1GB)ã®ã¿ä½¿ç”¨ã™ã‚‹
+ *	o pmem_lock()ã«ã‚ˆã‚‹ãƒ­ãƒƒã‚¯ã‚’è¡Œã‚ãšã«ã‚¢ã‚¯ã‚»ã‚¹ã§ãã‚‹
  */
 int pmem_alloc_lo(size_t size, struct pmem_desc *desc)
 {
-	uint32	need_pages;		/* Š„‚è“–‚Ä‚éƒy[ƒW” */
-	uint32	start_index;	/* Š„‚è“–‚Äæ“ªƒy[ƒW */
-	uint32	page_end;		/* æ“ªƒy[ƒW‚Æ‚µ‚Ä—˜—p‰Â”\‚ÈÅŒã‚Ìƒy[ƒW */
+	uint32	need_pages;		/* å‰²ã‚Šå½“ã¦ã‚‹ãƒšãƒ¼ã‚¸æ•° */
+	uint32	start_index;	/* å‰²ã‚Šå½“ã¦å…ˆé ­ãƒšãƒ¼ã‚¸ */
+	uint32	page_end;		/* å…ˆé ­ãƒšãƒ¼ã‚¸ã¨ã—ã¦åˆ©ç”¨å¯èƒ½ãªæœ€å¾Œã®ãƒšãƒ¼ã‚¸ */
 	uint32	i;
 
-	/* Š„‚è“–‚Ä‚éƒy[ƒW”‚ğ‹‚ß‚é */
+	/* å‰²ã‚Šå½“ã¦ã‚‹ãƒšãƒ¼ã‚¸æ•°ã‚’æ±‚ã‚ã‚‹ */
 	need_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
 
-	/* æ“ªƒy[ƒW‚Æ‚µ‚Ä—˜—p‰Â”\‚ÈÅŒã‚Ìƒy[ƒW‚ğ‹‚ß‚é */
+	/* å…ˆé ­ãƒšãƒ¼ã‚¸ã¨ã—ã¦åˆ©ç”¨å¯èƒ½ãªæœ€å¾Œã®ãƒšãƒ¼ã‚¸ã‚’æ±‚ã‚ã‚‹ */
 	page_end = phys_pages - need_pages;
 
-	/* Š„‚è“–‚Ä‚Å‚«‚é‚Ü‚Å‹ó‚«ƒy[ƒW‚ğ’T‚· */
+	/* å‰²ã‚Šå½“ã¦ã§ãã‚‹ã¾ã§ç©ºããƒšãƒ¼ã‚¸ã‚’æ¢ã™ */
 	start_index = 0;
 	for(;;) {
-		/* Å‰‚Ì‹ó‚«ƒy[ƒW‚ğ’T‚· */
+		/* æœ€åˆã®ç©ºããƒšãƒ¼ã‚¸ã‚’æ¢ã™ */
 		for(; start_index<=page_end; start_index++) {
 			if(PAGEMAP_GET(start_index) == 0) {
-				break;	/* ‹ó‚«ƒy[ƒW‚ğŒ©‚Â‚¯‚½ */
+				break;	/* ç©ºããƒšãƒ¼ã‚¸ã‚’è¦‹ã¤ã‘ãŸ */
 			}
 		}
 		if(start_index > page_end)
-			break;	/* ‹ó‚«ƒy[ƒW‚ª‚İ‚Â‚©‚ç‚È‚©‚Á‚½ */
+			break;	/* ç©ºããƒšãƒ¼ã‚¸ãŒã¿ã¤ã‹ã‚‰ãªã‹ã£ãŸ */
 
-		/* •K—v‚È˜A‘±‹ó‚«ƒy[ƒW‚ğŠm•Û‚Å‚«‚é‚©’²‚×‚é */
+		/* å¿…è¦ãªé€£ç¶šç©ºããƒšãƒ¼ã‚¸ã‚’ç¢ºä¿ã§ãã‚‹ã‹èª¿ã¹ã‚‹ */
 		for(i=0; i<need_pages; i++) {
 			if(PAGEMAP_GET(start_index + i) != 0)
-				break;	/* g—pÏ‚İƒy[ƒW‚ªŒ©‚Â‚©‚Á‚½ */
+				break;	/* ä½¿ç”¨æ¸ˆã¿ãƒšãƒ¼ã‚¸ãŒè¦‹ã¤ã‹ã£ãŸ */
 		}
 		if(i == need_pages)
-			break;	/* ‹ó‚«ƒy[ƒW‚ªŒ©‚Â‚©‚Á‚½ */
+			break;	/* ç©ºããƒšãƒ¼ã‚¸ãŒè¦‹ã¤ã‹ã£ãŸ */
 
-		/* ‹ó‚«ƒy[ƒW‚ª‚İ‚Â‚©‚ç‚È‚©‚Á‚½ê‡ */
-		start_index += i + 1;	/* g—pÏ‚İƒy[ƒW‚ÌŸƒy[ƒW‚©‚çÄs‚·‚é */
+		/* ç©ºããƒšãƒ¼ã‚¸ãŒã¿ã¤ã‹ã‚‰ãªã‹ã£ãŸå ´åˆ */
+		start_index += i + 1;	/* ä½¿ç”¨æ¸ˆã¿ãƒšãƒ¼ã‚¸ã®æ¬¡ãƒšãƒ¼ã‚¸ã‹ã‚‰å†è©¦è¡Œã™ã‚‹ */
 	}
 
-	/* ‹ó‚«—Ìˆæ‚ªŒ©‚Â‚©‚ç‚È‚©‚Á‚½ê‡ */
+	/* ç©ºãé ˜åŸŸãŒè¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸå ´åˆ */
 	if(i > page_end)
 		return PMEM_NOSPACE;
 
-	/* Œ©‚Â‚©‚Á‚½‹ó‚«—Ìˆæ‚ğg—pÏ‚İ‚Æ‚·‚é */
+	/* è¦‹ã¤ã‹ã£ãŸç©ºãé ˜åŸŸã‚’ä½¿ç”¨æ¸ˆã¿ã¨ã™ã‚‹ */
 	for(i=0; i<need_pages; i++)
 		PAGEMAP_SET(start_index + i);
 
-	/* ƒfƒXƒNƒŠƒvƒ^‚Éî•ñ‚ğİ’è‚·‚é */
+	/* ãƒ‡ã‚¹ã‚¯ãƒªãƒ—ã‚¿ã«æƒ…å ±ã‚’è¨­å®šã™ã‚‹ */
 	desc->paddr = (void *) (start_index << 12);
 	desc->vaddr = (void *) ((start_index << 12) | SYS_START);
 	desc->size	= need_pages << 12;
 
-	/* ¬Œ÷ */
+	/* æˆåŠŸ */
 	return PMEM_SUCCESS;
 }
 
 /*
- * ˜A‘±‚µ‚½•¨—ƒƒ‚ƒŠ‚ğƒy[ƒW’PˆÊ‚ÅŠ„‚è“–‚Ä‚é
- *	o ƒJ[ƒlƒ‹ƒAƒhƒŒƒX‹óŠÔ‚©‚ç’¼ÚƒAƒNƒZƒX‚Å‚«‚È‚¢‰ºˆÊ—Ìˆæ(>=1GB)‚àg—p‚·‚é
- *	o pmem_lock()‚É‚æ‚éƒƒbƒN‚ğs‚í‚È‚¢‚ÆƒAƒNƒZƒX‚Å‚«‚È‚¢
+ * é€£ç¶šã—ãŸç‰©ç†ãƒ¡ãƒ¢ãƒªã‚’ãƒšãƒ¼ã‚¸å˜ä½ã§å‰²ã‚Šå½“ã¦ã‚‹
+ *	o ã‚«ãƒ¼ãƒãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ã‹ã‚‰ç›´æ¥ã‚¢ã‚¯ã‚»ã‚¹ã§ããªã„ä¸‹ä½é ˜åŸŸ(>=1GB)ã‚‚ä½¿ç”¨ã™ã‚‹
+ *	o pmem_lock()ã«ã‚ˆã‚‹ãƒ­ãƒƒã‚¯ã‚’è¡Œã‚ãªã„ã¨ã‚¢ã‚¯ã‚»ã‚¹ã§ããªã„
  */
 int pmem_alloc_hi(size_t size, struct pmem_desc *desc)
 {
-	/* –¢À‘• */
+	/* æœªå®Ÿè£… */
 	return pmem_alloc_lo(size, desc);
 }
 
 /*
- * ƒy[ƒW’PˆÊ‚ÅŠ„‚è“–‚Ä‚½•¨—ƒƒ‚ƒŠ‚ğ‰ğ•ú‚·‚é
+ * ãƒšãƒ¼ã‚¸å˜ä½ã§å‰²ã‚Šå½“ã¦ãŸç‰©ç†ãƒ¡ãƒ¢ãƒªã‚’è§£æ”¾ã™ã‚‹
  */
 int pmem_free(struct pmem_desc *desc)
 {
 	uint32 start_page, end_page, i;
 
-	/* ƒuƒƒbƒN‚Ìƒy[ƒW”ÍˆÍ‚ğæ“¾‚·‚é */
+	/* ãƒ–ãƒ­ãƒƒã‚¯ã®ãƒšãƒ¼ã‚¸ç¯„å›²ã‚’å–å¾—ã™ã‚‹ */
 	start_page = (uint32)desc->paddr >> 12;
 	end_page   = start_page + (desc->size >> 12);
 
-	/* ƒy[ƒW‚ğƒ`ƒFƒbƒN‚·‚é */
+	/* ãƒšãƒ¼ã‚¸ã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹ */
 	for(i=start_page; i<=end_page; i++) {
-		/* –¢g—p‚Ìƒy[ƒW‚ªŒŸo‚³‚ê‚½ê‡ */
+		/* æœªä½¿ç”¨ã®ãƒšãƒ¼ã‚¸ãŒæ¤œå‡ºã•ã‚ŒãŸå ´åˆ */
 		if(PAGEMAP_GET(i) == 0)
-			return PMEM_BADDESC;	/* ƒGƒ‰[ */
+			return PMEM_BADDESC;	/* ã‚¨ãƒ©ãƒ¼ */
 	}
 
-	/* ƒy[ƒW‚ğ‰ğ•ú‚·‚é */
+	/* ãƒšãƒ¼ã‚¸ã‚’è§£æ”¾ã™ã‚‹ */
 	for(i=start_page; i<=end_page; i++)
-		PAGEMAP_RESET(i);	/* ƒy[ƒW‚ğ–¢g—p‚É‚·‚é */
+		PAGEMAP_RESET(i);	/* ãƒšãƒ¼ã‚¸ã‚’æœªä½¿ç”¨ã«ã™ã‚‹ */
 
-	/* ¬Œ÷ */
+	/* æˆåŠŸ */
 	return PMEM_SUCCESS;
 }
 
 /*
- * ƒy[ƒWƒuƒƒbƒN‚ğ‰¼‘zƒAƒhƒŒƒX‹óŠÔ‚Éƒ}ƒbƒv‚·‚é
+ * ãƒšãƒ¼ã‚¸ãƒ–ãƒ­ãƒƒã‚¯ã‚’ä»®æƒ³ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ã«ãƒãƒƒãƒ—ã™ã‚‹
  */
 int pmem_lock(struct pmem_desc *desc)
 {
-	/* –¢À‘• */
+	/* æœªå®Ÿè£… */
 	return PMEM_SUCCESS;
 }
 
 int pmem_unlock(struct pmem_desc *desc)
 {
-	/* –¢À‘• */
+	/* æœªå®Ÿè£… */
 	return PMEM_SUCCESS;
 }

@@ -5,7 +5,7 @@
 #include "asm.h"
 #include "pic.h"
 
-/* ÄƒXƒPƒWƒ…[ƒ‹ƒtƒ‰ƒO */
+/* å†ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ãƒ•ãƒ©ã‚° */
 static int	 resched_flag;
 
 /* forward declaration */
@@ -16,29 +16,29 @@ static void handle_fault(struct interrupt_frame *fp);
 
 
 /*
- * Š„‚è‚İŠÇ—•”‚ğ‰Šú‰»‚·‚é
+ * å‰²ã‚Šè¾¼ã¿ç®¡ç†éƒ¨ã‚’åˆæœŸåŒ–ã™ã‚‹
  */
 void int_init()
 {
 	int i;
 
 	/* NOTE:
-	 *	o ‚±‚Ì“_‚Å‚ÍŠ„‚è‚İ‚Í‹Ö~(IPL_HIGH)‚³‚ê‚Ä‚¢‚éB
-	 *	o Š„‚è‚İ‚Ì‹–‰Â‚ÍIRQ‚Ì‰Šú‰»ƒ‹[ƒ`ƒ“‚ÅIRQ‚ğƒ}ƒXƒN‚µ‚Ä‚©‚çs‚¤B */
+	 *	o ã“ã®æ™‚ç‚¹ã§ã¯å‰²ã‚Šè¾¼ã¿ã¯ç¦æ­¢(IPL_HIGH)ã•ã‚Œã¦ã„ã‚‹ã€‚
+	 *	o å‰²ã‚Šè¾¼ã¿ã®è¨±å¯ã¯IRQã®åˆæœŸåŒ–ãƒ«ãƒ¼ãƒãƒ³ã§IRQã‚’ãƒã‚¹ã‚¯ã—ã¦ã‹ã‚‰è¡Œã†ã€‚ */
 
-	/* IDT‚ğì¬‚·‚é */
+	/* IDTã‚’ä½œæˆã™ã‚‹ */
 	create_idt();
 
-	/* CPU‚ÉIDT‚ğƒ[ƒh‚·‚é */
+	/* CPUã«IDTã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ */
 	load_idt();
 
-	/* ‚·‚×‚Ä‚ÌŠ„‚è‚İ‚ğ‹–‰Â‚·‚é(¦‚½‚¾‚µIRQ‚Íƒ}ƒXƒNÏ‚İ) */
+	/* ã™ã¹ã¦ã®å‰²ã‚Šè¾¼ã¿ã‚’è¨±å¯ã™ã‚‹(â€»ãŸã ã—IRQã¯ãƒã‚¹ã‚¯æ¸ˆã¿) */
 	asm_sti();
 }
 
 /*
- * ÄƒXƒPƒWƒ…[ƒ‹ƒtƒ‰ƒO‚ğƒZƒbƒg‚·‚é
- * (Œ»İ‚ÌŠ„‚è‚İˆ—I—¹‚ÉÄƒXƒPƒWƒ…[ƒ‹‚ğs‚¤)
+ * å†ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ãƒ•ãƒ©ã‚°ã‚’ã‚»ãƒƒãƒˆã™ã‚‹
+ * (ç¾åœ¨ã®å‰²ã‚Šè¾¼ã¿å‡¦ç†çµ‚äº†æ™‚ã«å†ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ã‚’è¡Œã†)
  */
 void int_set_resched_flag()
 {
@@ -46,11 +46,11 @@ void int_set_resched_flag()
 }
 
 /*
- * ˆê”ÊŠ„‚è‚İƒnƒ“ƒhƒ‰
+ * ä¸€èˆ¬å‰²ã‚Šè¾¼ã¿ãƒãƒ³ãƒ‰ãƒ©
  * (called from trap.s)
  *
- * NOTE: IDT“à‚ÅŠ„‚è‚İƒQ[ƒg‚Æ‚µ‚Ä“o˜^‚³‚ê‚Ä‚¢‚é‚½‚ßA
- *		 ƒnƒ“ƒhƒ‰‚ÍŠ„‚è‚İ‹Ö~ó‘Ô‚ÅŠJn‚³‚ê‚éB
+ * NOTE: IDTå†…ã§å‰²ã‚Šè¾¼ã¿ã‚²ãƒ¼ãƒˆã¨ã—ã¦ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹ãŸã‚ã€
+ *		 ãƒãƒ³ãƒ‰ãƒ©ã¯å‰²ã‚Šè¾¼ã¿ç¦æ­¢çŠ¶æ…‹ã§é–‹å§‹ã•ã‚Œã‚‹ã€‚
  */
 void int_handler(struct interrupt_frame *fp)
 {
@@ -59,14 +59,14 @@ void int_handler(struct interrupt_frame *fp)
 	is_handled = 0;
 	int_num    = fp->int_num;
 
-	/* ÄƒXƒPƒWƒ…[ƒ‹ƒtƒ‰ƒO‚ğƒNƒŠƒA‚·‚é */
+	/* å†ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ãƒ•ãƒ©ã‚°ã‚’ã‚¯ãƒªã‚¢ã™ã‚‹ */
 	resched_flag = 0;
 
 	/*
-	 * IRQ‚ÉŠ„‚è“–‚Ä‚ç‚ê‚½Š„‚è‚İ‚Ì”Ô†‚Å‚ ‚éê‡
+	 * IRQã«å‰²ã‚Šå½“ã¦ã‚‰ã‚ŒãŸå‰²ã‚Šè¾¼ã¿ã®ç•ªå·ã§ã‚ã‚‹å ´åˆ
 	 */
 	if(int_num >= INT_IRQ_BASE && int_num <= INT_IRQ_BASE + IRQ_MAX) {
-		/* ƒ\ƒtƒgƒEƒFƒA‚É‚æ‚éINT–½—ß‚Å‚ ‚éê‡A—áŠO0D‚Æ‚µ‚Äˆ—‚·‚é */
+		/* ã‚½ãƒ•ãƒˆã‚¦ã‚§ã‚¢ã«ã‚ˆã‚‹INTå‘½ä»¤ã§ã‚ã‚‹å ´åˆã€ä¾‹å¤–0Dã¨ã—ã¦å‡¦ç†ã™ã‚‹ */
 
 		int irq_num = int_num - INT_IRQ_BASE;
 		int in_service = pic_get_irq_in_service();
@@ -77,14 +77,14 @@ void int_handler(struct interrupt_frame *fp)
 				in_service, int_num);
 			CRT_FATAL("IRQ error");
 		} else {
-			/* IRQƒnƒ“ƒhƒ‰‚ğƒR[ƒ‹‚·‚é */
+			/* IRQãƒãƒ³ãƒ‰ãƒ©ã‚’ã‚³ãƒ¼ãƒ«ã™ã‚‹ */
 			irq_handler(irq_num);
 			is_handled = 1;
 		}
 	}
 
 	/*
-	 * CPU‚Ì—áŠO‚ğƒnƒ“ƒhƒ‹‚·‚é
+	 * CPUã®ä¾‹å¤–ã‚’ãƒãƒ³ãƒ‰ãƒ«ã™ã‚‹
 	 */
 	else if(int_num >= 0 && int_num <= 0x1f) {
 		handle_fault(fp);
@@ -92,96 +92,128 @@ void int_handler(struct interrupt_frame *fp)
 	}
 
 	/*
-	 * ƒnƒ“ƒhƒ‹‚³‚ê‚È‚©‚Á‚½ê‡
+	 * ãƒãƒ³ãƒ‰ãƒ«ã•ã‚Œãªã‹ã£ãŸå ´åˆ
 	 */
 	if(!is_handled) {
 		crt_printf("\nIRQ handler not installed (int %02X)\n" ,int_num);
 		CRT_FATAL("IRQ error");
 	}
 
-	/* Š„‚è‚İˆ—ƒnƒ“ƒhƒ‰“à‚ÅÄƒXƒPƒWƒ…[ƒ‹‚ª—v‹‚³‚ê‚½ê‡*/
+	/* å‰²ã‚Šè¾¼ã¿å‡¦ç†ãƒãƒ³ãƒ‰ãƒ©å†…ã§å†ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ«ãŒè¦æ±‚ã•ã‚ŒãŸå ´åˆ*/
 	if(resched_flag != 0)
-		sched_yield();	/* ƒ^ƒXƒN‚ğØ‚è‘Ö‚¦‚é */
+		sched_yield();	/* ã‚¿ã‚¹ã‚¯ã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹ */
 }
 
-/* IDT‚ğì¬‚·‚é */
+/* IDTã‚’ä½œæˆã™ã‚‹ */
 static void create_idt()
 {
 	int i;
 
-	/* ‚·‚×‚Ä‚ÌƒGƒ“ƒgƒŠ‚É–¢’è‹`Š„‚è‚İƒnƒ“ƒhƒ‰‚ğƒZƒbƒg‚·‚é */
+	/* ã™ã¹ã¦ã®ã‚¨ãƒ³ãƒˆãƒªã«æœªå®šç¾©å‰²ã‚Šè¾¼ã¿ãƒãƒ³ãƒ‰ãƒ©ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 	for(i=0; i<256; i++)
 		set_idt_entry(i, 0, _asm_undefined_int_handler);
 
-	/* 32ŒÂ‚ÌƒtƒH[ƒ‹ƒgƒnƒ“ƒhƒ‰‚ğƒZƒbƒg‚·‚é */
+	/* 32å€‹ã®ãƒ•ã‚©ãƒ¼ãƒ«ãƒˆãƒãƒ³ãƒ‰ãƒ©ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 	for(i=0; i<32; i++)
 		set_idt_entry(i, 0, _asm_fault_int_handler_tbl[i]);
 
-	/* 16ŒÂ‚ÌIRQƒnƒ“ƒhƒ‰‚ğƒZƒbƒg‚·‚é */
+	/* 16å€‹ã®IRQãƒãƒ³ãƒ‰ãƒ©ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 	for(i=0; i<16; i++)
 		set_idt_entry(i+INT_IRQ_BASE, 0, _asm_irq_int_handler_tbl[i]);
 
-	/* ƒVƒXƒeƒ€ƒR[ƒ‹ƒnƒ“ƒhƒ‰‚ğƒZƒbƒg‚·‚é */
+	/* ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ¼ãƒ«ãƒãƒ³ãƒ‰ãƒ©ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 	set_idt_entry(INT_SYSCALL, 3, _asm_syscall_int_handler);
 }
 
-/* IDT‚ÌƒGƒ“ƒgƒŠ‚ğƒZƒbƒg‚·‚é */
+/* IDTã®ã‚¨ãƒ³ãƒˆãƒªã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 static void set_idt_entry(int index, int dpl, void *handler)
 {
 	uint8	*entry;
 
-	/* ƒGƒ“ƒgƒŠ‚Ö‚Ìƒ|ƒCƒ“ƒ^‚ğ‹‚ß‚é */
+	/* ã‚¨ãƒ³ãƒˆãƒªã¸ã®ãƒã‚¤ãƒ³ã‚¿ã‚’æ±‚ã‚ã‚‹ */
 	entry = (uint8 *)(ADDR_IDT | SYS_START) + 8*index;
 
-	/* ‘®«•”‚ğƒZƒbƒg‚·‚é */
-	entry[5] = 0x8e | (dpl << 5);	/* Š„‚è‚İƒQ[ƒg */
-//	entry[5] = 0x8f | (dpl << 5);	/* ƒgƒ‰ƒbƒvƒQ[ƒg */
+	/* å±æ€§éƒ¨ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
+	entry[5] = 0x8e | (dpl << 5);	/* å‰²ã‚Šè¾¼ã¿ã‚²ãƒ¼ãƒˆ */
+//	entry[5] = 0x8f | (dpl << 5);	/* ãƒˆãƒ©ãƒƒãƒ—ã‚²ãƒ¼ãƒˆ */
 
-	/* ƒRƒs[ƒJƒEƒ“ƒg‚ğƒ[ƒ‚É‚·‚é */
+	/* ã‚³ãƒ”ãƒ¼ã‚«ã‚¦ãƒ³ãƒˆã‚’ã‚¼ãƒ­ã«ã™ã‚‹ */
 	entry[4] = 0;
 
-	/* ƒnƒ“ƒhƒ‰ƒAƒhƒŒƒX‚ğƒZƒbƒg‚é */
+	/* ãƒãƒ³ãƒ‰ãƒ©ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ã‚»ãƒƒãƒˆã‚‹ */
 	*(uint16 *)(&entry[0]) = (uint16)((uint32)handler & 0xffff);
 	*(uint16 *)(&entry[6]) = (uint16)((uint32)handler >> 16);
 	*(uint16 *)(&entry[2]) = SEG_SYS_CODE;
 }
 
-/* IDT‚ğƒ[ƒh‚·‚é */
+/* IDTã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ */
 static void load_idt()
 {
 	uint32	tmp;
 	uint8	idtr[6];
 
-	/* IDTR‚Ì\‘¢‚ğ—pˆÓ‚·‚é */
-	*(uint16 *)&idtr[0] = 8*256-1;				/* IDT‚ÌƒŠƒ~ƒbƒg’l */
-	*(uint32 *)&idtr[2] = ADDR_IDT + SYS_START;	/* IDT‚ÌƒŠƒjƒAƒAƒhƒŒƒX */
+	/* IDTRã®æ§‹é€ ã‚’ç”¨æ„ã™ã‚‹ */
+	*(uint16 *)&idtr[0] = 8*256-1;				/* IDTã®ãƒªãƒŸãƒƒãƒˆå€¤ */
+	*(uint32 *)&idtr[2] = ADDR_IDT + SYS_START;	/* IDTã®ãƒªãƒ‹ã‚¢ã‚¢ãƒ‰ãƒ¬ã‚¹ */
 
-	/* LIDT–½—ß‚ÅIDT‚ğƒ[ƒh‚·‚é */
+	/* LIDTå‘½ä»¤ã§IDTã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ */
 	asm_lidt(idtr);
 }
 
-/* ƒvƒƒZƒbƒTƒtƒH[ƒ‹ƒgƒnƒ“ƒhƒ‰*/
+/* ãƒ—ãƒ­ã‚»ãƒƒã‚µãƒ•ã‚©ãƒ¼ãƒ«ãƒˆãƒãƒ³ãƒ‰ãƒ©*/
 static void handle_fault(struct interrupt_frame *fp)
 {
 	int int_num = fp->int_num;
 
-	/* Š„‚è‚İ”Ô†‚ğ•\¦‚·‚é */
-	crt_printf(
-		"[INT] int 0x%02X handled!\n"
-		"Stack = %08X\n"
-		"\n"
-		"EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X\n"
-		"ESI: %08X  EDI: %08X  EBP: %08X\n"
-		"\n"
-		"DS: %04X  ES: %04X  ERRORCODE: %08X\n",
-		"\n"
-		"EFLAGS: %08X  SS3: %04X  ESP3: %08X\n",
-		int_num, fp, fp->regs.eax, fp->regs.ebx, fp->regs.ecx, fp->regs.edx,
-		fp->regs.esi, fp->regs.edi, fp->regs.ebp, fp->regs.ds, fp->regs.es,
-		fp->error_code, fp->eflags,  fp->user_esp,	fp->user_ss
-	);
+	if (fp->cs & 3) {
+		crt_printf(
+			"[INT] int 0x%02X handled!\n"
+			"CS:  %04X  EIP: %08X\n"
+			"DS:  %04X  ES:  %04X  SS: %04X\n"
+			"EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X\n"
+			"ESI: %08X  EDI: %08X  EBP: %08X  ESP: %08X\n"
+			"EFLAGS: %08X  ERRORCODE: %08X\n",
+			int_num,
+			fp->cs,
+			fp->eip,
+			fp->regs.ds,
+			fp->regs.es,
+			fp->user_ss,
+			fp->regs.eax,
+			fp->regs.ebx,
+			fp->regs.ecx,
+			fp->regs.edx,
+			fp->regs.esi,
+			fp->regs.edi,
+			fp->regs.ebp,
+			fp->user_esp,
+			fp->eflags,
+			fp->error_code);
+	} else {
+		crt_printf(
+			"[INT] int 0x%02X handled!\n"
+			"CS:  %04X  EIP: %08X\n"
+			"DS:  %04X  ES:  %04X\n"
+			"EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X\n"
+			"ESI: %08X  EDI: %08X  EBP: %08X\n"
+			"EFLAGS: %08X  ERRORCODE: %08X\n",
+			int_num,
+			fp->cs,
+			fp->eip,
+			fp->regs.ds,
+			fp->regs.es,
+			fp->regs.eax,
+			fp->regs.ebx,
+			fp->regs.ecx,
+			fp->regs.edx,
+			fp->regs.esi,
+			fp->regs.edi,
+			fp->regs.ebp,
+			fp->eflags,
+			fp->error_code);
+	}
 
-	/* –³ŒÀƒ‹[ƒv‚·‚é */
+	/* Halt. */
 	for(;;)
 		asm_hlt();
 }

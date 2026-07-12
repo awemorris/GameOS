@@ -1,17 +1,17 @@
 /*
- * ƒAƒhƒŒƒX‹óŠÔŠÇ—•”
+ * ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ç®¡ç†éƒ¨
  */
 
 #include <sys/kcrt/kcrt.h>
 #include "univ.h"
 #include "asm.h"
 
-struct univ_info *univ_list_head;	/* univƒŠƒXƒg‚Ìæ“ª*/
-univ_t *cur_univ;			/* Œ»İ‘I‘ğ‚³‚ê‚Ä‚¢‚éuniv */
-int free_id_top;			/* –¢g—pID‚Ìæ“ª */
+struct univ_info *univ_list_head;	/* univãƒªã‚¹ãƒˆã®å…ˆé ­*/
+univ_t *cur_univ;			/* ç¾åœ¨é¸æŠã•ã‚Œã¦ã„ã‚‹univ */
+int free_id_top;			/* æœªä½¿ç”¨IDã®å…ˆé ­ */
 
 /*
- * ƒAƒhƒŒƒX‹óŠÔŠÇ—•”‚ğ‰Šú‰»‚·‚é
+ * ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ç®¡ç†éƒ¨ã‚’åˆæœŸåŒ–ã™ã‚‹
  */
 void univ_init()
 {
@@ -20,51 +20,51 @@ void univ_init()
 }
 
 /*
- * ƒAƒhƒŒƒX‹óŠÔ‚ğì¬‚·‚é
+ * ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ã‚’ä½œæˆã™ã‚‹
  */
 univ_t univ_create()
 {
 	struct univ_info *ui;
 	int i;
 
-	/* \‘¢‘Ì‚Ìƒƒ‚ƒŠ‚ğŠm•Û‚µ‚Ä‰Šú‰»‚·‚é */
+	/* æ§‹é€ ä½“ã®ãƒ¡ãƒ¢ãƒªã‚’ç¢ºä¿ã—ã¦åˆæœŸåŒ–ã™ã‚‹ */
 	ui = (struct univ_info *) crt_malloc(sizeof(struct univ_info));
 	ui->univ_id		= free_id_top++;
 	ui->ptbl_head	= NULL;
 	ui->next		= NULL;
 
-	/* PDT‚ğ‰Šú‰»‚·‚é */
+	/* PDTã‚’åˆæœŸåŒ–ã™ã‚‹ */
 	for(i=0; i<1024; i++)
 		ui->pdt[i] = 0;
 	for(i=0; i<128; i++)
 		ui->pdt[512+i] = (i*0x400000)|(PTE_PRESENT|PTE_USER|PTE_BIG|PTE_WRITE);
 
-	/* univ_t‚ÉƒLƒƒƒXƒg‚µ‚Ä•Ô‚· */
+	/* univ_tã«ã‚­ãƒ£ã‚¹ãƒˆã—ã¦è¿”ã™ */
 	return (univ_t) ui;
 }
 
 /*
- * ƒAƒhƒŒƒX‹óŠÔ‚ğØ‚è‘Ö‚¦‚é
+ * ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹
  */
 void univ_switch(univ_t u)
 {
 	struct univ_info *ui;
 
-	/* •ÏX‚ª‚È‚¢ê‡ */
+	/* å¤‰æ›´ãŒãªã„å ´åˆ */
 	if(u == cur_univ)
 		return;
 
-	/* univ_info‚ÉƒLƒƒƒXƒg‚·‚é */
+	/* univ_infoã«ã‚­ãƒ£ã‚¹ãƒˆã™ã‚‹ */
 	ui = (struct univ_info *)u;
 
-	/* PDT‚ğØ‚è‘Ö‚¦‚é */
+	/* PDTã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹ */
 	asm_load_cr3((uint32)ui->pdt - SYS_START);
 
 	crt_puts("\n[univ changed!]");
 }
 
 /*
- * univ’l‚ª³‚µ‚¢‚©ƒ`ƒFƒbƒN‚·‚é
+ * univå€¤ãŒæ­£ã—ã„ã‹ãƒã‚§ãƒƒã‚¯ã™ã‚‹
  */
 int univ_is_valid(univ_t u)
 {
@@ -72,10 +72,10 @@ int univ_is_valid(univ_t u)
 
 	ui = (struct univ_info *)u;
 
-	/* ƒJ[ƒlƒ‹‹óŠÔ‚Ìê‡ */
+	/* ã‚«ãƒ¼ãƒãƒ«ç©ºé–“ã®å ´åˆ */
 	if(ui == UNIV_SYS)
-		return 1;	/* ³‚µ‚¢’l */
+		return 1;	/* æ­£ã—ã„å€¤ */
 
-	/* •s³‚È’l*/
+	/* ä¸æ­£ãªå€¤*/
 	return 0;
 }

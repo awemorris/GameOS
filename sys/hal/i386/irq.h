@@ -5,7 +5,7 @@
 #include <sys/hal/task.h>	/* task_t */
 
 /*
- * IRQ番号
+ * IRQ逡ｪ蜿ｷ
  */
 #define	IRQ_MAX			(15)
 
@@ -20,10 +20,10 @@
 #endif
 
 /*
- * IRQサービス登録情報
+ * IRQ繧ｵ繝ｼ繝薙せ逋ｻ骭ｲ諠�蝣ｱ
  */
 struct irq_service_info {
-	task_t	ist;	/* 割り込みサービスタスク */
+	task_t	ist;	/* 蜑ｲ繧願ｾｼ縺ｿ繧ｵ繝ｼ繝薙せ繧ｿ繧ｹ繧ｯ */
 };
 
 /*

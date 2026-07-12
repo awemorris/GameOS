@@ -1,5 +1,5 @@
 /*
- * �^�X�N�Ǘ���
+ * タスク管理部
  */
 
 #include <sys/kcrt/kcrt.h>
@@ -8,17 +8,17 @@
 
 extern uint32 tss_area[26];	/* TSS */
 
-static struct task_info	*task_list;		/* �S�^�X�N�̃��X�g */
-static struct task_info	*running_task;	/* CPU�Ŏ��s���̃^�X�N */
+static struct task_info	*task_list;		/* 全タスクのリスト */
+static struct task_info	*running_task;	/* CPUで実行中のタスク */
 
 static void set_initial_registers(struct task_info *ti);
-static void	set_initial_resume_frame(struct task_info *ti, void *start, void *param, void *user_sp);
-static void	tasklist_add(struct task_info *ti);
-static void	tasklist_del(struct task_info *ti);
+static void set_initial_resume_frame(struct task_info *ti, void *start, void *param, void *user_sp);
+static void tasklist_add(struct task_info *ti);
+static void tasklist_del(struct task_info *ti);
 
 
 /*
- * �^�X�N�Ǘ���������������
+ * タスク管理部を初期化する
  */
 void task_init()
 {
@@ -26,57 +26,57 @@ void task_init()
 
 	task_list = NULL;
 
-	/* TSS���[���N���A���� */
+	/* TSSをゼロクリアする */
 	crt_memset(tss_area, 0, 104);
 	tss_area[2] = SEG_SYS_DATA;	/* SS0 */
 
-	/* ����CPU�Ŏ��s���̃R���e�L�X�g��\���^�X�N���쐬���� */
+	/* 現在CPUで実行中のコンテキストを表すタスクを作成する */
 	ti = crt_malloc(sizeof(struct task_info));
 	crt_memset(ti, 0, sizeof(struct task_info));
-	ti->universe	= UNIV_SYS;		/* �J�[�l����Ԃœ��삷��^�X�N�ł��� */
-	ti->run_cpu		= 0;				/* CPU�̔ԍ� */
+	ti->universe = UNIV_SYS;		/* カーネル空間で動作するタスクである */
+	ti->run_cpu = 0;			/* CPUの番号 */
 
-	/* �^�X�N���X�g�ɒǉ����� */
+	/* タスクリストに追加する */
 	tasklist_add(ti);
 
-	/* �쐬�����^�X�N���A���݂�CPU�Ŏ��s���̃^�X�N�Ƃ��Đݒ肷�� */
+	/* 作成したタスクを、現在のCPUで実行中のタスクとして設定する */
 	running_task = ti;
 }
 
 /*
- * �V�����^�X�N���쐬����
+ * 新しいタスクを作成する
  */
 task_t task_create(
-	univ_t	universe,	/* ����A�h���X��� */
-	void	*start,		/* �J�n�֐��̃A�h���X */
-	void	*param,		/* �J�n�֐��̈��� */
-	void	*user_sp)	/* ���[�U�X�^�b�N�|�C���^(�J�[�l���^�X�N�ł�NULL) */
+	univ_t	universe,	/* 動作アドレス空間 */
+	void	*start,		/* 開始関数のアドレス */
+	void	*param,		/* 開始関数の引数 */
+	void	*user_sp)	/* ユーザスタックポインタ(カーネルタスクではNULL) */
 {
 	struct task_info *ti;
 
-	/* �^�X�N�\���̂̃��������m�ۂ��ă����o��ݒ肷�� */
+	/* タスク構造体のメモリを確保してメンバを設定する */
 	ti = crt_malloc(sizeof(struct task_info));
 	crt_memset(ti, 0, sizeof(struct task_info));
-	ti->universe	= universe;		/* ����A�h���X��� */
-	ti->run_cpu		= -1;			/* ����s��� */
+	ti->universe = universe;		/* 動作アドレス空間 */
+	ti->run_cpu = -1;			/* 非実行状態 */
 
-	/* �V�X�e���X�^�b�N�����蓖�Ă� */
+	/* システムスタックを割り当てる */
 	ti->sys_stack = crt_malloc(SYS_STACK_SIZE);
 
-	/* �V�X�e���X�^�b�N�̍Œ�ʃA�h���X�Ƀ^�X�N�\���̂ւ̃|�C���^���i�[���� */
+	/* システムスタックの最低位アドレスにタスク構造体へのポインタを格納する */
 	*(uint32 *)(ti->sys_stack) = (uint32) ti;
 
-	/* �^�X�N�̏����X�^�b�N�t���[�����Z�b�g���� */
+	/* タスクの初期スタックフレームをセットする */
 	set_initial_resume_frame(ti, start, param, user_sp);
 
-	/* �^�X�N���X�g�ɒǉ����� */
+	/* タスクリストに追加する */
 	tasklist_add(ti);
 
-	/* task�^�ɃL���X�g���ĕԂ�*/
+	/* task型にキャストして返す*/
 	return (task_t)ti;
 }
 
-/* �^�X�N�J�n���̃��W���[���t���[����ݒ肷�� */
+/* タスク開始時のレジュームフレームを設定する */
 static void set_initial_resume_frame(
 	struct task_info *ti,
 	void	*start,
@@ -85,55 +85,55 @@ static void set_initial_resume_frame(
 {
 	struct task_resume_frame *fp;
 
-	/* �������W���[���t���[���|�C���^�̈ʒu�����߂� */
-	ti->resume_esp = (struct task_resume_frame *)
-						((uint32)ti->sys_stack - sizeof(struct task_resume_frame));
-
+	/* 初期レジュームフレームポインタの位置を求める */
+//	ti->resume_esp = (struct task_resume_frame *)((uint32)ti->sys_stack - sizeof(struct task_resume_frame));
+	ti->resume_esp = (struct task_resume_frame *)((uint32)ti->sys_stack + SYS_STACK_SIZE - sizeof(struct task_resume_frame));
+    
 	/*
-	 * ���W���[���t���[����ݒ肷��
+	 * レジュームフレームを設定する
 	 */
 
-	/* �[���N���A���� */
+	/* ゼロクリアする */
 	fp = ti->resume_esp;
 	crt_memset(fp, 0, sizeof(struct task_resume_frame));
 
-	/* asm_task_entrypoint()������s���J�n���� */
+	/* asm_task_entrypoint()から実行を開始する */
 	fp->eflags	= asm_get_eflags();
 	fp->ret_eip = (uint32) asm_task_entrypoint;
 
 	if(ti->universe == UNIV_SYS) {
-		/* �J�[�l�����[�h�Z�O�����g���Z�b�g���� */
-		fp->ds = fp->es = fp->fs = fp->fs = SEG_SYS_DATA;
+		/* カーネルモードセグメントをセットする */
+		fp->ds = fp->es = fp->fs = fp->gs = SEG_SYS_DATA;
 
-		/* asm_task_entrypoint()��iret���߂�start�ɃW�����v���� */
+		/* asm_task_entrypoint()のiret命令でstartにジャンプする */
 		fp->init.sys.eip	= (uint32) start;
 		fp->init.sys.cs		= SEG_SYS_CODE;
-		fp->init.sys.eflags	= asm_get_eflags() | EFLAGS_IF | EFLAGS_IOPL_0;
+		fp->init.sys.eflags	= EFLAGS_IF | EFLAGS_RSV1 | EFLAGS_IOPL_0;
 
-		/* �J�n�֐�start()�̌Ăяo���X�^�b�N(����) */
+		/* 開始関数start()の呼び出しスタック(引数) */
 		fp->init.sys._ret_eip	= 0;
-		fp->init.sys.param		= (uint32) param;
+		fp->init.sys.param	= (uint32) param;
 	} else {
-		/* ���[�U���[�h�Z�O�����g���Z�b�g���� */
-		fp->ds = fp->es	= fp->fs = fp->fs = SEG_USER_DATA;
+		/* ユーザモードセグメントをセットする */
+		fp->ds = fp->es	= fp->fs = fp->gs = SEG_USER_DATA;
 
-		/* asm_task_entrypoint()��iret���߂�start�ɃW�����v���� */
+		/* asm_task_entrypoint()のiret命令でstartにジャンプする */
 		fp->init.usr.eip	= (uint32) start;
 		fp->init.usr.cs		= SEG_USER_CODE | SEG_RPL_3;
-		fp->init.usr.eflags	= asm_get_eflags() | EFLAGS_IF | EFLAGS_IOPL_3;
+		fp->init.usr.eflags	= EFLAGS_IF | EFLAGS_RSV1 | EFLAGS_IOPL_3;
 
-		/* �������x���ڍs�ɂ���ăX�^�b�N�؂�ւ����������� */
-		fp->init.usr.esp	= (uint32) user_sp - 8; /* -8�͌Ăяo���K��̕� */
+		/* 特権レベル移行によってスタック切り替えが発生する */
+		fp->init.usr.esp	= (uint32) user_sp - 8; /* -8は呼び出し規約の分 */
 		fp->init.usr.ss		= SEG_USER_DATA | SEG_RPL_3;
 
-		/* �J�n�֐�start()�̌Ăяo���X�^�b�N(����) */
+		/* 開始関数start()の呼び出しスタック(引数) */
 		*((uint32 *) user_sp	) = (uint32) param;
 		*((uint32 *) user_sp - 1) = 0;	/* call ret */
 	}
 }
 
 /*
- * �^�X�N��j������
+ * タスクを破棄する
  */
 void task_destroy(task_t t)
 {
@@ -141,67 +141,67 @@ void task_destroy(task_t t)
 
 	ti = (struct task_info *)t;
 
-	/* �^�X�N���X�g����폜���� */
+	/* タスクリストから削除する */
 	tasklist_del(ti);
 
-	/* �V�X�e���X�^�b�N�Ƃ��Ċ��蓖�Ă����������������*/
+	/* システムスタックとして割り当てたメモリを解放する*/
 	crt_free(ti->sys_stack);
 
-	/* task�\���̂Ɋ��蓖�Ă���������������� */
+	/* task構造体に割り当てたメモリを解放する */
 	crt_free(ti);
 }
 
 /*
- * �^�X�N��؂�ւ���
+ * タスクを切り替える
  */
 void task_switch(task_t t)
 {
 	struct task_info *switch_to, *switch_from;
 	uint32	tmp;
 
-	switch_to	 = (struct task_info *) t;	/* �؂�ւ���̃^�X�N */
-	switch_from  = running_task;			/* ���݂�CPU�Ŏ��s���̃^�X�N */
-	running_task = switch_to;				/* running_task��ύX���� */
+	switch_to	 = (struct task_info *) t;	/* 切り替え先のタスク */
+	switch_from  = running_task;			/* 現在のCPUで実行中のタスク */
+	running_task = switch_to;				/* running_taskを変更する */
 
-	/* �X�C�b�`��^�X�N�����݂̃^�X�N�Ɠ���Ȃ牽���������^�[������ */
+	/* スイッチ先タスクが現在のタスクと同一なら何もせずリターンする */
 	if(switch_to == switch_from) {
 		/*puts("-same task-");*/
 		return;
 	}
 
-	/* �؂�ւ��悪���[�U��Ԃ̏ꍇ */
+	/* 切り替え先がユーザ空間の場合 */
 	if(switch_to->universe != UNIV_SYS) {
-		/* �A�h���X��Ԃ�ύX���� */
+		/* アドレス空間を変更する */
 		univ_switch(switch_to->universe);
 
-		/* �V�X�e���X�^�b�N�|�C���^��ύX���� */
+		/* システムスタックポインタを変更する */
 		tss_area[1] = (uint32) switch_to->sys_stack + SYS_STACK_SIZE;
 	}
 
-	/* ���������_���W�X�^�Q��؂�ւ��� */
+	/* 浮動小数点レジスタ群を切り替える */
 	asm_fnsave(switch_from->fpregs);
 	if(switch_to->resume_esp->ret_eip != (uint32)asm_task_entrypoint)
 		asm_frstor(switch_to->fpregs);
 
-	/* �X�^�b�N��؂�ւ��� */
+	/* スタックを切り替える */
 	asm_task_dispatch(&switch_from->resume_esp, &switch_to->resume_esp);
 
 	/*
-	 * �V�K�^�X�N�̏ꍇ�̓G���g���փ|�C���g�W�����v����B
-	 * ����ȊO�̏ꍇ�͕ʂȃR���e�L�X�g�̂��̈ʒu�ɖ߂��Ă���B
+	 * 新規タスクの場合はエントリへポイントジャンプする。
+	 * それ以外の場合は別なコンテキストのこの位置に戻ってくる。
 	 */
 }
 
 /*
- * �w�肵��CPU�Ŏ��s���̃^�X�N���擾����
+ * 指定したCPUで実行中のタスクを取得する
  */
 task_t task_get_current()
 {
 	struct task_info *ti;
 
 	/*
-	 * �V�X�e���X�^�b�N�̍Œ�ʃA�h���X�Ɋi�[����Ă���A�^�X�N�\���̂ւ�
-	 * �|�C���^���擾����
+	 * システムスタックの最低位アドレスに格納されている、タスク構造体への
+	 * ポインタを取得する
 	 */
 //	ti =  (struct task_info *)(asm_get_esp() & 0xfffff000);
 
@@ -212,48 +212,49 @@ task_t task_get_current()
 
 
 /**
- * �^�X�N���X�g����
+ * タスクリスト操作
  */
 
-/* �^�X�N�����X�g�̍Ō�ɒǉ����� */
+/* タスクをリストの最後に追加する */
 static void tasklist_add(struct task_info *ti)
 {
-	/* ���X�g����̏ꍇ */
+	/* リストが空の場合 */
 	if(task_list == NULL) {
-		/* t�����X�g�̐擪�ɃZ�b�g���� */
+		/* tをリストの先頭にセットする */
 		task_list = ti;
 		return;
 	}
 
-	/* ���X�g�̖����m�[�h��T�� */
+	/* リストの末尾ノードを探す */
 	struct task_info *p = task_list;
-	while(p->next != NULL)	/* ���X�g�̖�����T�� */
+	while(p->next != NULL)	/* リストの末尾を探す */
 		p = p->next;
 
-	/* ���X�g�̖����ɒǉ����� */
+	/* リストの末尾に追加する */
 	p->next = ti;
 	ti->next = NULL;
 }
 
-/* �^�X�N�����X�g����폜���� */
+/* タスクをリストから削除する */
 static void tasklist_del(struct task_info *ti)
 {
 	struct task_info *p, *prev;
 
-	/* p��T������p�̈�O�̃m�[�h���擾���� */
+	/* pを探すしてpの一つ前のノードを取得する */
 	p = task_list, prev = NULL;
 	while(p != NULL) {
 		if(p == ti)
 			break;
+		prev = p;
 		p = p->next;
 	}
 	if(p == NULL)
 		return;	/* not found */
 
-	/* ���X�g����폜���� */
+	/* リストから削除する */
 	if(prev == NULL)
-		task_list = p->next;	/* p�����X�g�̐擪�̏ꍇ*/
+		task_list = p->next;	/* pがリストの先頭の場合*/
 	else
-		prev->next = p->next;	/* p�����X�g�̐擪�łȂ��ꍇ */
+		prev->next = p->next;	/* pがリストの先頭でない場合 */
 	p->next = NULL;
 }

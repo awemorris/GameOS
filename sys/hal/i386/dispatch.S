@@ -15,7 +15,7 @@ EXT_C(asm_task_entrypoint):
 	iret
 
 /*
- * �X�^�b�N��؂�ւ���
+ * スタックを切り替える
  *
  * void asm_task_dispatch(
  *	struct task_resume_frame *save,

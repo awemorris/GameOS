@@ -10,29 +10,29 @@
 #include <sys/kern/sched.h>	/* (struct schedulable) */
 
 /*
- * ƒVƒXƒeƒ€ƒXƒ^ƒbƒNƒTƒCƒY
+ * ã‚·ã‚¹ãƒ†ãƒ ã‚¹ã‚¿ãƒƒã‚¯ã‚µã‚¤ã‚º
  */
 #define SYS_STACK_SIZE	(4096)
 
 /*
- * ƒ^ƒXƒN\‘¢‘Ì
+ * ã‚¿ã‚¹ã‚¯æ§‹é€ ä½“
  */
 struct task_info {
-	/* ƒXƒPƒWƒ…[ƒ‰‚Ìschedulable\‘¢‘Ì‚ÉƒLƒƒƒXƒg‰Â”\‚Æ‚·‚é */
+	/* ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ©ã®schedulableæ§‹é€ ä½“ã«ã‚­ãƒ£ã‚¹ãƒˆå¯èƒ½ã¨ã™ã‚‹ */
 	struct schedulable	_inherit;
 
-	struct task_info *next;	/* ƒ^ƒXƒNƒŠƒXƒg‚ÌƒŠƒ“ƒN */
-	univ_t	universe;		/* “®ìƒAƒhƒŒƒX‹óŠÔ */
-	int		run_cpu;		/* Às’†‚ÌCPU(Às’†‚Å‚È‚¯‚ê‚Î-1) */
-	void	*sys_stack;		/* Šm•Û‚µ‚½ƒJ[ƒlƒ‹ƒ‚[ƒhƒXƒ^ƒbƒN */
+	struct task_info *next;	/* ã‚¿ã‚¹ã‚¯ãƒªã‚¹ãƒˆã®ãƒªãƒ³ã‚¯ */
+	univ_t	universe;		/* å‹•ä½œã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ */
+	int	run_cpu;		/* å®Ÿè¡Œä¸­ã®CPU(å®Ÿè¡Œä¸­ã§ãªã‘ã‚Œã°-1) */
+	void	*sys_stack;		/* ç¢ºä¿ã—ãŸã‚«ãƒ¼ãƒãƒ«ãƒ¢ãƒ¼ãƒ‰ã‚¹ã‚¿ãƒƒã‚¯ */
 
-	/* ƒRƒ“ƒeƒLƒXƒg */
-	struct task_resume_frame *resume_esp;	/* ƒXƒ^ƒbƒNƒ|ƒCƒ“ƒ^ */
-	uint8	fpregs[512];	/* FXSAVE/FXRSTORE—p•Û‘¶ˆæ */
+	/* ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ */
+	struct task_resume_frame *resume_esp;	/* ã‚¹ã‚¿ãƒƒã‚¯ãƒã‚¤ãƒ³ã‚¿ */
+	uint8	fpregs[512];	/* FXSAVE/FXRSTOREç”¨ä¿å­˜åŸŸ */
 };
 
 /*
- * ƒ^ƒXƒNØ‚è‘Ö‚¦‚ÌƒRƒ“ƒeƒLƒXƒg•Û‘¶—pƒXƒ^ƒbƒNƒtƒŒ[ƒ€
+ * ã‚¿ã‚¹ã‚¯åˆ‡ã‚Šæ›¿ãˆæ™‚ã®ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆä¿å­˜ç”¨ã‚¹ã‚¿ãƒƒã‚¯ãƒ•ãƒ¬ãƒ¼ãƒ 
  */
 struct task_resume_frame {
 	uint32	gs;			/* pushl %gs */
@@ -42,31 +42,31 @@ struct task_resume_frame {
 	uint32	edi;		/*	 (pushal) */
 	uint32	esi;		/*	 (pushal) */
 	uint32	ebp;		/*	 (pushal) */
-	uint32	_esp;		/*	 (pushal) ‚±‚Ì’l‚Í–³‹ */
+	uint32	_esp;		/*	 (pushal) ã“ã®å€¤ã¯ç„¡è¦– */
 	uint32	ebx;		/*	 (pushal) */
 	uint32	edx;		/*	 (pushal) */
 	uint32	ecx;		/*	 (pushal) */
 	uint32	eax;		/* pushal */
 	uint32	eflags;		/* pushfl */
-	uint32	ret_eip;	/* ‰‰ñ: asm_task_start()
-						 * ˆÈ~: asm_task_dispatch()ƒR[ƒ‹’¼Œã‚Ì–½—ß */
+	uint32	ret_eip;	/* åˆå›: asm_task_start()
+						 * ä»¥é™: asm_task_dispatch()ã‚³ãƒ¼ãƒ«ç›´å¾Œã®å‘½ä»¤ */
 
 	union {
-		/* ƒVƒXƒeƒ€ƒ^ƒXƒN—p(ƒXƒ^ƒbƒNØ‚è‘Ö‚¦‚È‚µ, ˆø”‚ğƒvƒbƒVƒ…) */
+		/* ã‚·ã‚¹ãƒ†ãƒ ã‚¿ã‚¹ã‚¯ç”¨(ã‚¹ã‚¿ãƒƒã‚¯åˆ‡ã‚Šæ›¿ãˆãªã—, å¼•æ•°ã‚’ãƒ—ãƒƒã‚·ãƒ¥) */
 		struct {
-			uint32	eip;		/* ÀsŠJnˆÊ’u */
+			uint32	eip;		/* å®Ÿè¡Œé–‹å§‹ä½ç½® */
 			uint32	cs;
 			uint32	eflags;
-			uint32	_ret_eip;	/* (CŒÄ‚Ño‚µ‹K–ñã‚Ì–ß‚èæƒAƒhƒŒƒX) */
-			uint32	param;		/* ƒXƒ^ƒbƒN“n‚µ‚·‚éˆø” */
+			uint32	_ret_eip;	/* (Cå‘¼ã³å‡ºã—è¦ç´„ä¸Šã®æˆ»ã‚Šå…ˆã‚¢ãƒ‰ãƒ¬ã‚¹) */
+			uint32	param;		/* ã‚¹ã‚¿ãƒƒã‚¯æ¸¡ã—ã™ã‚‹å¼•æ•° */
 		} sys;
 
-		/* ƒ†[ƒUƒ^ƒXƒN—p(ƒXƒ^ƒbƒNØ‚è‘Ö‚¦, ˆø”‚Íƒ†[ƒUƒXƒ^ƒbƒN‚ÉƒvƒbƒVƒ…) */
+		/* ãƒ¦ãƒ¼ã‚¶ã‚¿ã‚¹ã‚¯ç”¨(ã‚¹ã‚¿ãƒƒã‚¯åˆ‡ã‚Šæ›¿ãˆ, å¼•æ•°ã¯ãƒ¦ãƒ¼ã‚¶ã‚¹ã‚¿ãƒƒã‚¯ã«ãƒ—ãƒƒã‚·ãƒ¥) */
 		struct {
-			uint32	eip;	/* ÀsŠJnˆÊ’u */
+			uint32	eip;	/* å®Ÿè¡Œé–‹å§‹ä½ç½® */
 			uint32	cs;
 			uint32	eflags;
-			uint32	esp;	/* ƒ†[ƒUƒXƒ^ƒbƒN */
+			uint32	esp;	/* ãƒ¦ãƒ¼ã‚¶ã‚¹ã‚¿ãƒƒã‚¯ */
 			uint32	ss;
 		} usr;
 	} init;
@@ -80,8 +80,8 @@ void task_init();
 /*
  * dispatch.s
  */
-void asm_task_entrypoint();	/* V‹Kƒ^ƒXƒN‚ÌƒGƒ“ƒgƒŠƒ|ƒCƒ“ƒg */
-void asm_task_dispatch(		/* ƒ^ƒXƒN‚ğØ‚è‘Ö‚¦‚é */
+void asm_task_entrypoint();	/* æ–°è¦ã‚¿ã‚¹ã‚¯ã®ã‚¨ãƒ³ãƒˆãƒªãƒã‚¤ãƒ³ãƒˆ */
+void asm_task_dispatch(		/* ã‚¿ã‚¹ã‚¯ã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹ */
 	struct task_resume_frame **save,
 	struct task_resume_frame **load
 );

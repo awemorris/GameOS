@@ -23,7 +23,7 @@ void pic_init()
 	/* Initialize the 8259A slave. */
 	asm_outb(PIC_SLAVE_PORT1, 0x11);		/* Start init, edge-triggered / cascaded */
 	asm_outb(PIC_SLAVE_PORT2, INT_IRQ_BASE + 8);	/* INT E8h-EFh */
-	asm_outb(PIC_SLAVE_PORT2, 1 << SLAVE_IRQ);	/* Connect to the master */
+	asm_outb(PIC_SLAVE_PORT2, SLAVE_IRQ);		/* Connect to the master */
 	asm_outb(PIC_SLAVE_PORT2, 0x01);		/* 80x86 mode */
 
 	/* Mask all IRQs. */

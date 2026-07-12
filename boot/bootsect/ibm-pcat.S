@@ -489,7 +489,7 @@ pm32_entry:
  *   0x18 flat 32-bit code (physical 0x00000000 -> virtual 0x80000000)
  *   0x20 flat 32-bit data (physical 0x00000000 -> virtual 0x80000000)
  */
-gdt:
+gdt_entries:
 	.quad 0
 
 	/*
@@ -511,7 +511,6 @@ gdt:
 	.byte 0x92      /* Access: Data, Read/Write */
 	.byte 0xcf      /* Flags(0xc0) + Limit 16:19(0x7) */
 	.byte 0x00      /* Base 24:31 -> 0x00000000 */
-
 gdt_end:
 
 /*

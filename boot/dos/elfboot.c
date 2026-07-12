@@ -549,7 +549,7 @@ show_hma_top(void)
 static void
 boot_kernel(void)
 {
-	u32 entry = ((u32)FP_SEG((void far *)&multiboot_info) << 4) +
+	u32 entry = ((u32)FP_SEG((void far *)&multiboot_info) << 4)+
 		    FP_OFF((void far *)&multiboot_info);
 
 	/* Ask before jumping to the kernel. */
@@ -565,6 +565,9 @@ boot_kernel(void)
 	/* Jump to the kernel. */
 	enable_a20();
 	__asm {
+		/* Set multiboot_info address. */
+		mov ebx, entry
+
 		cli
 		mov eax, cr0
 		or al, 1
@@ -575,10 +578,17 @@ boot_kernel(void)
 		/* Set DS. */
 		mov ax, 0x10
 		mov ds, ax
+		mov es, ax
+		mov fs, ax
+		mov gs, ax
+		mov ss, ax
 
-		/* Set boot parameters on EBX and EAX. */
-		mov ebx, entry		/* multiboot_info */
-		mov eax, 0x2badb002	/* multiboot magic */
+		/* Clear eflags. */
+		push 0x0002
+		popf
+
+		/* Multiboot magic */
+		mov eax, 0x2badb002
 
 		/* o32 far ret */
 		mov edx, 0x08
