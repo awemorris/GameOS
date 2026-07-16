@@ -1,9 +1,4 @@
-/*
- *
- */
-
-#define _ASM_SRC_
-#include "asm.h"
+#include "defs.h"
 
 .code32
 .data
@@ -277,7 +272,7 @@ create_idt:
 jump_to_extern_c:
 
 	/* jump to cmain() */
-	jmp EXT_C(cmain)
+	jmp cmain
 
 /*
  * Print message and halt.

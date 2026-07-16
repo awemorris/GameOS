@@ -195,7 +195,7 @@ void task_switch(task_t t)
 /*
  * 指定したCPUで実行中のタスクを取得する
  */
-task_t task_get_current()
+task_t task_get_current(void)
 {
 	struct task_info *ti;
 

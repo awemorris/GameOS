@@ -1,0 +1,19 @@
+#include <sys/types.h>
+#include "../i386.h"
+
+void bsp_init_bootstrap(void)
+{
+	bsp_cons_init();
+}
+
+void bsp_
+	i386_pmem_init();
+
+	irq_init();
+
+	int_init();
+	univ_init();
+	task_init();
+	sched_init();
+	clock_init();
+}

@@ -1,11 +1,7 @@
 /*
- * Physical Memory Management
+ * Paging
  */
 
-#include <sys/hal/irq.h>
-#include <sys/kcrt/kcrt.h>
-#include "pmem.h"
-#include "asm.h"
 #include "multiboot.h"
 
 #define PAGEMAP_GET(n)		(pagemap_tbl[(n)>>5] & (1<<((n)&31)))
@@ -13,35 +9,78 @@
 #define PAGEMAP_RESET(n)	(pagemap_tbl[(n)>>5] &= ~(1<<((n)&31)))
 
 /*
+ * Page Table
+ */
+struct page_table_info {
+	uintptr_t vaddr;
+	uint32_t *pte;
+	struct page_table_info *next;
+};
+
+/*
+ * Space
+ */
+struct space_info {
+	uint32_t pdt[1024];		/* Page Directory Table */
+	int space_id;			/* Space ID */
+	struct ptbl *ptbl_head;		/* Page Table */
+	struct space_info *next;
+};
+
+/*
  * Number of Physical Pages
  */
-static uint32 phys_pages;
+static uint32_t phys_pages;
 
 /*
  * Page Usage Table
  */
-static uint32 *pagemap_tbl;
+static uint32_t *pagemap_tbl;
+
+/*
+ * Space List
+ */
+struct hal_space_info *space_list;
+
+/*
+ * Current Selected Space
+ */
+hal_space_t *cur_space;
+
+/*
+ * Top Unused ID
+ */
+int free_id_top;
 
 /*
  * Forward declaration
  */
-static void init_pagemap_tbl(void);
+static void init_memory_map(void);
 
 /*
- * Initialize pmem module.
+ * Initialize the page module.
  */
-void pmem_init(void)
+void
+i386_page_init(void)
 {
-	init_pagemap_tbl();
+	cur_space = HAL_SPACE_SYS;
+	free_id_top = 1;
+
+	/* Initialize the memory map. */
+	init_memory_map();
 }
 
-/* 物理メモリのマッピングを検出する */
-static void init_pagemap_tbl(void)
+static void
+init_memory_map(void)
 {
 	struct multiboot_info *mbi;
 	uint32	total, avail_top, i;
 
-	/* ブート情報のメモリ項目を利用できることを確認する */
+	/*
+	 * Get the memory size from the multiboot info.
+	 * Multiboot info is passed by a boot loader such as GRUB.
+	 * (Our testing boot loader too passes it.)
+	 */
 	mbi = (struct multiboot_info *) (SYS_START + ADDR_BOOT_INFO);
 	if(!(mbi->flags & MBINFO_FLAG_MEMORY))
 		fatal("Can't detect memory size");
@@ -70,14 +109,14 @@ static void init_pagemap_tbl(void)
 
 /*
  * 連続した物理メモリをページ単位で割り当てる
- *	o カーネルアドレス空間から直接アクセス可能な下位領域(<1GB)のみ使用する
- *	o pmem_lock()によるロックを行わずにアクセスできる
+ *  - カーネルアドレス空間から直接アクセス可能な下位領域(<1GB)のみ使用する
+ *  - pmem_lock()によるロックを行わずにアクセスできる
  */
-int pmem_alloc_lo(size_t size, struct pmem_desc *desc)
+int pmem_alloc(size_t size, struct pmem_desc *desc)
 {
-	uint32	need_pages;		/* 割り当てるページ数 */
+	uint32	need_pages;	/* 割り当てるページ数 */
 	uint32	start_index;	/* 割り当て先頭ページ */
-	uint32	page_end;		/* 先頭ページとして利用可能な最後のページ */
+	uint32	page_end;	/* 先頭ページとして利用可能な最後のページ */
 	uint32	i;
 
 	/* 割り当てるページ数を求める */
@@ -128,17 +167,6 @@ int pmem_alloc_lo(size_t size, struct pmem_desc *desc)
 }
 
 /*
- * 連続した物理メモリをページ単位で割り当てる
- *	o カーネルアドレス空間から直接アクセスできない下位領域(>=1GB)も使用する
- *	o pmem_lock()によるロックを行わないとアクセスできない
- */
-int pmem_alloc_hi(size_t size, struct pmem_desc *desc)
-{
-	/* 未実装 */
-	return pmem_alloc_lo(size, desc);
-}
-
-/*
  * ページ単位で割り当てた物理メモリを解放する
  */
 int pmem_free(struct pmem_desc *desc)
@@ -160,21 +188,67 @@ int pmem_free(struct pmem_desc *desc)
 	for(i=start_page; i<=end_page; i++)
 		PAGEMAP_RESET(i);	/* ページを未使用にする */
 
-	/* 成功 */
+	/* Succeeded. */
 	return PMEM_SUCCESS;
 }
 
 /*
- * ページブロックを仮想アドレス空間にマップする
+ * アドレス空間を作成する
  */
-int pmem_lock(struct pmem_desc *desc)
+univ_t univ_create()
 {
-	/* 未実装 */
-	return PMEM_SUCCESS;
+	struct univ_info *ui;
+	int i;
+
+	/* 構造体のメモリを確保して初期化する */
+	ui = (struct univ_info *)malloc(sizeof(struct univ_info));
+	ui->univ_id = free_id_top++;
+	ui->ptbl_head = NULL;
+	ui->next = NULL;
+
+	/* PDTを初期化する */
+	for(i=0; i<1024; i++)
+		ui->pdt[i] = 0;
+	for(i=0; i<128; i++)
+		ui->pdt[512+i] = (i*0x400000)|(PTE_PRESENT|PTE_USER|PTE_BIG|PTE_WRITE);
+
+	/* univ_tにキャストして返す */
+	return (univ_t) ui;
 }
 
-int pmem_unlock(struct pmem_desc *desc)
+/*
+ * アドレス空間を切り替える
+ */
+void univ_switch(univ_t u)
 {
-	/* 未実装 */
-	return PMEM_SUCCESS;
+	struct univ_info *ui;
+
+	/* 変更がない場合 */
+	if(u == cur_univ)
+		return;
+
+	/* univ_infoにキャストする */
+	ui = (struct univ_info *)u;
+
+	/* PDTを切り替える */
+	asm_load_cr3((uint32)ui->pdt - SYS_START);
+
+	puts("\n[univ changed!]");
+}
+
+/*
+ * univ値が正しいかチェックする
+ */
+int univ_is_valid(univ_t u)
+{
+	struct univ_info *ui;
+
+	ui = (struct univ_info *)u;
+
+	/* カーネル空間の場合 */
+	if(ui == UNIV_SYS)
+		return 1;	/* 正しい値 */
+
+	/* 不正な値*/
+	return 0;
 }

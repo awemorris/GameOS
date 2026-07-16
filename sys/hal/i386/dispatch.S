@@ -1,5 +1,4 @@
-#define _ASM_SRC_
-#include "asm.h"
+#include "defs.h"
 
 .code32
 .text

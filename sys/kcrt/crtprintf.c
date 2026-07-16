@@ -30,16 +30,16 @@ int printf(const char *format, ...)
 	char opt[OPT_LEN_MAX];		/* option ("04" of "%04d") */
 	int opt_len;
 
-	argp	= (void *) &format;
-	escape	= 0;
-	opt_len	= 0;
+	argp = (void *)&format;
+	escape = 0;
+	opt_len = 0;
 
 	while(*format != '\0') {
 		int output = -1;
 		char c = *format++;
 		int opt_flag = 0;
 
-		if(!escape) {
+		if (!escape) {
 			if(c == '%') escape = 1;
 			else		 cons_putc(c);
 			continue;
@@ -51,7 +51,7 @@ int printf(const char *format, ...)
 			cons_puts((const char *) *(++argp));
 			break;
 		case 'd':
-			put_dec((int) *(++argp),
+			put_dec((int)*(++argp),
 				(opt_len > 0 && opt[0] == '0') ? (opt[1] - '0') : 0,
 				1 /* signed */);
 			break;
