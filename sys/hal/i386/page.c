@@ -1,5 +1,5 @@
 /*
- * Paging
+ * i386 Memory Management
  */
 
 #include "multiboot.h"
@@ -61,7 +61,7 @@ static void init_memory_map(void);
  * Initialize the page module.
  */
 void
-i386_page_init(void)
+i386_mem_init(void)
 {
 	cur_space = HAL_SPACE_SYS;
 	free_id_top = 1;
